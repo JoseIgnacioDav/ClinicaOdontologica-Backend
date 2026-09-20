@@ -4,6 +4,7 @@ import com.clinicaodontologica.backend.dto.response.usuario.RespuestaAlLoguaarse
 import com.clinicaodontologica.backend.dto.response.usuario.RespuestaAlcrearUsuarioDTO;
 import com.clinicaodontologica.backend.model.Usuario;
 import com.clinicaodontologica.backend.service.UsuarioService;
+import jakarta.servlet.http.HttpSession;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;

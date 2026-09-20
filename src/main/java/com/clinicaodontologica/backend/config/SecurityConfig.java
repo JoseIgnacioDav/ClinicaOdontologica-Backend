@@ -32,15 +32,16 @@ Con un Bean, tú le dices a Spring: "Oye, fabrica una sola vez esta herramienta,
         // Permitimos el acceso libre y sin restricciones a los endpoints de registro y login .requestMatchers("/api/auth/register", "/api/auth/login").permitAll()
         //// Cualquier otra petición que llegue al sistema exigirá que el usuario esté autenticado .anyRequest().authenticated()
         http.csrf(csrf ->csrf.disable()).
-                authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/register","/api/auth/login","/citas/**")
+                authorizeHttpRequests(auth -> auth // quito a "/citas/** de los endpoints publicos
+                        .requestMatchers("/api/auth/register","/api/auth/login")
                         .permitAll()
                         .anyRequest()
-                        .authenticated());
-
+                        .authenticated()
+                ).formLogin(form -> form.disable())// desactivamos el form de html por defecto
+                .httpBasic(basic -> basic.disable());
         return http.build();
 
-        // prueba a ver si esto se puede regresar a una version anterior
+
     }
 
 }
