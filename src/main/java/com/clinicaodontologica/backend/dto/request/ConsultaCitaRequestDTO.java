@@ -3,7 +3,8 @@ package com.clinicaodontologica.backend.dto.request;
 import com.clinicaodontologica.backend.model.Usuario;
 
 import java.time.LocalDate;
-
+// {TODO}este dto se creo exclusivamente para poder mandar el odontologo y la fecha dentro del bodu
+// {TODO} --sino te tocaba poner el odontologo en el body y la fecha en el requestparam !
 public class ConsultaCitaRequestDTO {
     private Usuario odontologo;
     private LocalDate fecha;
