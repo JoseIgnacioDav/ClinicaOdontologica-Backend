@@ -48,9 +48,11 @@ public class CitaController {
 
 
     @PostMapping("/paciente/consultarcita")
-    public String saludo(){
-       return "hola";
+    public ResponseEntity<?>consultarcitapb(@RequestBody ConsultaCitaRequestDTO request){ // usa el dto para incluir el odontologo y la fecha todo dentro del body
+       return ResponseEntity.ok(citaService.versionpaciente(request.getOdontologo(),request.getFecha())); // aqui en vez de meter odontologo y fecha como parametro en la funcion mete lo que pasa por el request para tener el odontologo y la fecha dentro del body usando ese dto
     }
+
+
 
 
 

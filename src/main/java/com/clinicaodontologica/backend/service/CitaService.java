@@ -57,7 +57,7 @@ public class CitaService {
         //Creamos una lista vacia que contendra los datos limpios y seguros
         List<ConsultarCitasOdontologoConfidentialResponseDTO> listaDTOs = new ArrayList<>();
 
-        //recorremos cada cira dentro de la lista con datos sensibles con un for
+        //recorremos cada cita dentro de la lista con datos sensibles con un for
         for(Cita2 iteracioncita : citaEntidades){
             ConsultarCitasOdontologoConfidentialResponseDTO dto = new ConsultarCitasOdontologoConfidentialResponseDTO(); //en cada iteracion crearemos un dto que se asignara los datos que si se pueden mostrar de cada dto en la lista de dtos que exponian mucha info
             //pasamos los datos basicos
@@ -67,15 +67,21 @@ public class CitaService {
             dto.setEstado(iteracioncita.getEstado());
             //esto es lo mismo que arriba solo con validacion (por si no hay nombre en paciente u odontologo no se rompa el programa)
             if(iteracioncita.getOdontologo() != null){
-                dto.setNombreOdontologo(iteracioncita.getOdontologo().getNombres() + " " +iteracioncita.getOdontologo().getApellidos())  ;
+                dto.setNombreOdontologo(iteracioncita.getOdontologo().getNombres() + " " +iteracioncita.getOdontologo().getApellidos());
             }else {
                 dto.setNombreOdontologo("nombre odontologo sin asignar");
             }
             //ahora el nombre del paciente
             if(iteracioncita.getPaciente() != null){
-                dto.setNombrePaciente(iteracioncita.getPaciente().getNombres());
+                dto.setNombrePaciente(iteracioncita.getPaciente().getNombres() + " " + iteracioncita.getPaciente().getApellidos());
             }else {
                 dto.setNombrePaciente("nombre paciente sin asignar");
+            }
+            if (iteracioncita.getPaciente().getEmail()!= null) {// revisa si dentro de la iteracion que es de tipo usuario el atributo email de usuario no esta vacio
+                dto.setEmailpaciente(iteracioncita.getPaciente().getEmail());
+            }
+            if (iteracioncita.getPaciente().getCedula() != null){ // revisa si dentor de la iteracion tipo usuario esta el atributo cedula
+                dto.setCedulapaciente(iteracioncita.getPaciente().getCedula());
             }
                 // ponemos el dto listo en la lista final
             listaDTOs.add(dto);
@@ -86,7 +92,26 @@ public class CitaService {
     }
 
     public List<ConsultarCitasLibresOdontologoPacientePublicDTO>versionpaciente (Usuario odontologo, LocalDate fecha){
+        //buscamos las citas en la bdd, vienen cargadas con contrasenas usuarios e informacion sensible
+        List<Cita2> citaEntidades = citaRepository.findByOdontologoAndFecha(odontologo,fecha);
+        //Creamos una lista vacia que contendra los datos limpios y seguros
+        List<ConsultarCitasLibresOdontologoPacientePublicDTO> listaDTOs = new ArrayList<>();
+        // recorremos cada cita dentro de la lista con datos sensibles con un for
+        for (Cita2 iteracioncita : citaEntidades){
+            ConsultarCitasLibresOdontologoPacientePublicDTO dto = new ConsultarCitasLibresOdontologoPacientePublicDTO(); //en cada iteracion crearemos un dto que se asignara los datos que si se pueden mostrar de cada dto en la lista de dtos que exponian mucha info
+            // pasamos los datos limitados
+            dto.setId(iteracioncita.getId());
+            dto.setFecha(iteracioncita.getFecha());
+            dto.setHora(iteracioncita.getHora());
+            dto.setEstado(iteracioncita.getEstado());
+            if(iteracioncita.getOdontologo() != null) {
+                dto.setNombreOdontologo(iteracioncita.getOdontologo().getNombres() + " " + iteracioncita.getOdontologo().getApellidos());
+            }
+            listaDTOs.add(dto);
+        }
 
+        //retornamos la lista sin exposicion de informacion sensible
+        return listaDTOs;
     }
 
 }

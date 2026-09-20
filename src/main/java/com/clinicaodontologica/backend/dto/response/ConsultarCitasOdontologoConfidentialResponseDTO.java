@@ -12,6 +12,9 @@ public class ConsultarCitasOdontologoConfidentialResponseDTO {
     //aqui mandamos texto plano en lugar del objeto completo con contrasenas
     private String nombreOdontologo;
     private String nombrePaciente;
+    private String cedulapaciente;
+    private String emailpaciente;
+
     //Constructor vacio obligatorio
     public ConsultarCitasOdontologoConfidentialResponseDTO(){}
 
@@ -63,5 +66,21 @@ public class ConsultarCitasOdontologoConfidentialResponseDTO {
 
     public void setNombrePaciente(String nombrePaciente) {
         this.nombrePaciente = nombrePaciente;
+    }
+
+    public String getCedulapaciente() {
+        return cedulapaciente;
+    }
+
+    public void setCedulapaciente(String cedulapaciente) {
+        this.cedulapaciente = cedulapaciente;
+    }
+
+    public String getEmailpaciente() {
+        return emailpaciente;
+    }
+
+    public void setEmailpaciente(String emailpaciente) {
+        this.emailpaciente = emailpaciente;
     }
 }
