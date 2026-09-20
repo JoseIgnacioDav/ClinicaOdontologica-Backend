@@ -39,6 +39,8 @@ Con un Bean, tú le dices a Spring: "Oye, fabrica una sola vez esta herramienta,
                         .authenticated());
 
         return http.build();
+
+        // prueba a ver si esto se puede regresar a una version anterior
     }
 
 }
