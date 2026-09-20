@@ -7,7 +7,7 @@ import java.time.LocalTime;
 
 @Entity
 @Table(name = "citas")
-public class Cita2 {
+public class Cita {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -35,7 +35,7 @@ public class Cita2 {
 
 
     //constructor vacio para decirle a spring concretamente a hibernate para que pueda reconstruir datos
-    public Cita2(){}
+    public Cita(){}
 
     //getters y setters
 

@@ -1,8 +1,9 @@
 package com.clinicaodontologica.backend.service;
 
-import com.clinicaodontologica.backend.dto.response.ConsultarCitasLibresOdontologoPacientePublicDTO;
-import com.clinicaodontologica.backend.dto.response.ConsultarCitasOdontologoConfidentialResponseDTO;
-import com.clinicaodontologica.backend.model.Cita2;
+import com.clinicaodontologica.backend.dto.response.cita.ConfirmacionCreacionCitaPAcienteDTO;
+import com.clinicaodontologica.backend.dto.response.cita.ConsultarCitasLibresOdontologoPacientePublicDTO;
+import com.clinicaodontologica.backend.dto.response.cita.ConsultarCitasOdontologoConfidentialResponseDTO;
+import com.clinicaodontologica.backend.model.Cita;
 import com.clinicaodontologica.backend.model.Usuario;
 import com.clinicaodontologica.backend.repository.CitaRepository;
 import com.clinicaodontologica.backend.repository.UsuarioRepository;
@@ -26,7 +27,7 @@ public class CitaService {
         this.passwordEncoder = passwordEncoder;
     }
 
-    public Cita2 crearcita (Cita2 citaqueintentancrear)throws Exception{
+    public ConfirmacionCreacionCitaPAcienteDTO crearcita (Cita citaqueintentancrear)throws Exception{
         // esta madre esta inseguro luego me toca hacer lo del token por que sino esta full atacable solo es cuestion de meterse a esta ruta e inyectar datos
         //llamamos al usuario que trata de crear la cita por email
         Optional<Usuario> usuarioquetratadecrearlacita = usuarioRepository.findByEmail(citaqueintentancrear.getEmailqueintentacrearlacita());
@@ -43,22 +44,39 @@ public class CitaService {
         String clavecifrafadelacita = passwordEncoder.encode(passwordcitatextoplano);
         citaqueintentancrear.setPassworddelmailquetratadecrearlacita(clavecifrafadelacita);
         citaRepository.save(citaqueintentancrear);
-        return citaqueintentancrear;
+
+        ConfirmacionCreacionCitaPAcienteDTO citaqueintetancrearsindatosexpuestos = new ConfirmacionCreacionCitaPAcienteDTO();
+        citaqueintetancrearsindatosexpuestos.setId(citaqueintentancrear.getId());
+        citaqueintetancrearsindatosexpuestos.setEstado(citaqueintentancrear.getEstado());
+        citaqueintetancrearsindatosexpuestos.setHora(citaqueintentancrear.getHora());
+        citaqueintetancrearsindatosexpuestos.setFecha(citaqueintentancrear.getFecha());
+        //{todo}   al momento de crear la cita se le pasa el id como unico parametro conectado con usuario,
+        //{todo} por eso jackson crea un usuario por debajo solo con el id, todo lo demas va null, si despues le pido que obtenga esos datos de paciente como no fueron puestso en el post, no los tiene y si los llamo asi va a dar error
+        // {todo}   citaqueintetancrearsindatosexpuestos.setNombrepaciente(citaqueintentancrear.getPaciente().getNombres() + " " +citaqueintentancrear.getPaciente().getApellidos()); // no tiene los datos del paciente por que no se los meti en el post solo el id
+        // por eso toca crear un usuario para que si tenga los datos llamados por la bdd., te preguntaras por que no reciclaste
+        // el que ya tenias arriba llamado: {todo}  [usuarioquetratadecrearlacitamodousuario] que pasa si el que trata de crear la cita no es el mismo que el que va a recibir la cita?  ( como un odontologo o una recepcionista)
+        // por eso toca llamar al usuario desde la bdd con el id que si se paso por el post, tampoco hay los datos del odontologo por la misma razon
+        Usuario pacientequerecibiralacita = usuarioRepository.findById(citaqueintentancrear.getPaciente().getId()).orElse(null);
+        Usuario odontologoqueatenderalacita = usuarioRepository.findById(citaqueintentancrear.getOdontologo().getId()).orElse(null);
+        if (pacientequerecibiralacita != null){
+            citaqueintetancrearsindatosexpuestos.setNombrepaciente(pacientequerecibiralacita.getNombres() + " " + pacientequerecibiralacita.getApellidos());
+        }
+        if (odontologoqueatenderalacita != null){
+            citaqueintetancrearsindatosexpuestos.setNombreodontologo(odontologoqueatenderalacita.getNombres() + " " + odontologoqueatenderalacita.getApellidos());
+        }
+        return citaqueintetancrearsindatosexpuestos;
     }
 
-//    public List<Cita2>disponibilidadOdontologo(Usuario odontologo,LocalDate fecha){ // esto busca las citas que tiene el odontologo en esa fecha
-//       return citaRepository.findByOdontologoAndFecha(odontologo,fecha);
-//    }
 
     public List<ConsultarCitasOdontologoConfidentialResponseDTO> disponibilidadOdontologo(Usuario odontologo, LocalDate fecha){
         //buscamos las citas en la bdd, vienen cargadas con contrasenas usuarios e informacion sensible
-        List<Cita2> citaEntidades = citaRepository.findByOdontologoAndFecha(odontologo,fecha);
+        List<Cita> citaEntidades = citaRepository.findByOdontologoAndFecha(odontologo,fecha);
 
         //Creamos una lista vacia que contendra los datos limpios y seguros
         List<ConsultarCitasOdontologoConfidentialResponseDTO> listaDTOs = new ArrayList<>();
 
         //recorremos cada cita dentro de la lista con datos sensibles con un for
-        for(Cita2 iteracioncita : citaEntidades){
+        for(Cita iteracioncita : citaEntidades){
             ConsultarCitasOdontologoConfidentialResponseDTO dto = new ConsultarCitasOdontologoConfidentialResponseDTO(); //en cada iteracion crearemos un dto que se asignara los datos que si se pueden mostrar de cada dto en la lista de dtos que exponian mucha info
             //pasamos los datos basicos
             dto.setId(iteracioncita.getId());
@@ -93,11 +111,11 @@ public class CitaService {
 
     public List<ConsultarCitasLibresOdontologoPacientePublicDTO>versionpaciente (Usuario odontologo, LocalDate fecha){
         //buscamos las citas en la bdd, vienen cargadas con contrasenas usuarios e informacion sensible
-        List<Cita2> citaEntidades = citaRepository.findByOdontologoAndFecha(odontologo,fecha);
+        List<Cita> citaEntidades = citaRepository.findByOdontologoAndFecha(odontologo,fecha);
         //Creamos una lista vacia que contendra los datos limpios y seguros
         List<ConsultarCitasLibresOdontologoPacientePublicDTO> listaDTOs = new ArrayList<>();
         // recorremos cada cita dentro de la lista con datos sensibles con un for
-        for (Cita2 iteracioncita : citaEntidades){
+        for (Cita iteracioncita : citaEntidades){
             ConsultarCitasLibresOdontologoPacientePublicDTO dto = new ConsultarCitasLibresOdontologoPacientePublicDTO(); //en cada iteracion crearemos un dto que se asignara los datos que si se pueden mostrar de cada dto en la lista de dtos que exponian mucha info
             // pasamos los datos limitados
             dto.setId(iteracioncita.getId());

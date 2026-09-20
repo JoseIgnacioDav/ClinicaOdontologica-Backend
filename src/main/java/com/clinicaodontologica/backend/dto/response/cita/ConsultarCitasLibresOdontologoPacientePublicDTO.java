@@ -1,4 +1,4 @@
-package com.clinicaodontologica.backend.dto.response;
+package com.clinicaodontologica.backend.dto.response.cita;
 
 import java.time.LocalDate;
 import java.time.LocalTime;

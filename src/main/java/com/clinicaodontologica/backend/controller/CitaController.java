@@ -1,7 +1,8 @@
 package com.clinicaodontologica.backend.controller;
 
 import com.clinicaodontologica.backend.dto.request.ConsultaCitaRequestDTO;
-import com.clinicaodontologica.backend.model.Cita2;
+import com.clinicaodontologica.backend.dto.response.cita.ConfirmacionCreacionCitaPAcienteDTO;
+import com.clinicaodontologica.backend.model.Cita;
 import com.clinicaodontologica.backend.service.CitaService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -23,9 +24,9 @@ public class CitaController {
     }
 
     @PostMapping("/crearcita")
-    public ResponseEntity<?> crearcita (@RequestBody Cita2 citaqueentraporfront){
+    public ResponseEntity<?> crearcita (@RequestBody Cita citaqueentraporfront){
         try {
-            Cita2 citacreada = citaService.crearcita(citaqueentraporfront);
+            ConfirmacionCreacionCitaPAcienteDTO citacreada = citaService.crearcita(citaqueentraporfront);
             // si se ejecuta bien chiill
             return ResponseEntity.status(HttpStatus.CREATED).body(citacreada);
         }catch (Exception e){
