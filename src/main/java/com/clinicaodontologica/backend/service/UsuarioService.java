@@ -12,6 +12,7 @@ y coordinar con el repositorio. Ni la base de datos ni los controladores toman d
 
 package com.clinicaodontologica.backend.service;
 
+import com.clinicaodontologica.backend.dto.response.usuario.RespuestaAlcrearUsuarioDTO;
 import com.clinicaodontologica.backend.model.Usuario;
 import com.clinicaodontologica.backend.repository.UsuarioRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -30,7 +31,7 @@ public class UsuarioService {
         this.passwordEncoder = passwordEncoder;
     }
 
-    public Usuario registrarUsuario(Usuario usuariorecibido) throws Exception {
+    public RespuestaAlcrearUsuarioDTO registrarUsuario(Usuario usuariorecibido) throws Exception {
 
         // busco el correo y la cedula que recibo del usuariorecibido  en la bdd
         Optional usuariollamadobddcdla = usuarioRepository.findByCedula(usuariorecibido.getCedula());
@@ -49,8 +50,17 @@ public class UsuarioService {
         // ahora en vez de usar get contrasena vamos a usar set contrasena para reemplazarlo por el hash antes de guardarlo
         usuariorecibido.setContrasena(passwordSeguro);
         //------------------------------------------------------
-        // ahora si devolvemos el usuariorecibido y tambien lo guardamos en la bdd al mismo tiempo ya con la clave modificada
-        return usuarioRepository.save(usuariorecibido);
+        // ahora usaremos el dto para devolcer el usuario limpio sin informacion extra
+        usuarioRepository.save(usuariorecibido);
+        RespuestaAlcrearUsuarioDTO usuariolimpio = new RespuestaAlcrearUsuarioDTO();
+        usuariolimpio.setId(usuariorecibido.getId());
+        usuariolimpio.setNombres(usuariorecibido.getNombres());
+        usuariolimpio.setApellidos(usuariorecibido.getApellidos());
+        usuariolimpio.setCedula(usuariorecibido.getCedula());
+        usuariolimpio.setEmail(usuariorecibido.getEmail());
+        usuariolimpio.setRol(usuariorecibido.getRol());
+
+        return usuariolimpio;
 
     }
 

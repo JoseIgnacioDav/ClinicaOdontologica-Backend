@@ -1,5 +1,6 @@
 package com.clinicaodontologica.backend.controller;
 
+import com.clinicaodontologica.backend.dto.response.usuario.RespuestaAlcrearUsuarioDTO;
 import com.clinicaodontologica.backend.model.Usuario;
 import com.clinicaodontologica.backend.service.UsuarioService;
 import org.springframework.http.HttpStatus;
@@ -24,7 +25,7 @@ public UsuarioController(UsuarioService usuarioService){
     @PostMapping("/register") // le indico la ruta de este endpoint
     public ResponseEntity<?> registrar(@RequestBody Usuario usuarioaqueentraporfront){ // creo el metodo registrar que va a pedir en el body un Usuario que tenga todos los campos que se pide en el model
     try{   // hago try catch por que los metodos de usuarioservice tienen excepciones y queremos que le mande las excepciones tambien por un map al front.. clave error valor: la excepcion que capturo de la funcion de service
-        Usuario nuevoUsuario = usuarioService.registrarUsuario(usuarioaqueentraporfront); // si no tira excepcion el metodo registrarusuario de usuarioservice se guarda en usuarionuevo
+        RespuestaAlcrearUsuarioDTO nuevoUsuario = usuarioService.registrarUsuario(usuarioaqueentraporfront); // si no tira excepcion el metodo registrarusuario de usuarioservice se guarda en usuarionuevo
         return ResponseEntity.status(HttpStatus.CREATED).body(nuevoUsuario); // y nos devuelve el estatus creado y el body con el usuario creado y se va al front !
     } catch (Exception e){  // si al tratar de jalar registrarUsuario se da una excepcion, catch la captura  y la nombramos excepcion e, puede tener cualquier nombre jajaj (obvio no se ejecuta el metodo registrar !! nos tiro una excepcion jajaj !1)
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", e.getMessage())); // y nos devuelve un status bad request junto con el body que tendra un mapa con el valor "error" y la clave el mensaje de la excepcion e, como es de tipo exception tiene este metodo getmessage bueno esa madre se va al front en un mapa
