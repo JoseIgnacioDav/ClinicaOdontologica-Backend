@@ -1,6 +1,7 @@
 // segundo paso, el primer paso fue poner las credenciales y configuariones en application.properties
 
 package com.clinicaodontologica.backend.model;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 
 //declaro la clase con entity y table lo nombro usuarios
@@ -27,6 +28,7 @@ public class Usuario { // nos va a pedir que le pongamos un primary key, (toda t
     private String contrasena;
 
     //por defecto si alguien se registra su rol sera paciente.. ya para administradores con mas permisos tocara modificar
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY) // con esto me aseguro que no puedan asignarse el rol odontologo y escalar privilegios
     @Column(nullable = false)
     private String rol = "PACIENTE";
 
