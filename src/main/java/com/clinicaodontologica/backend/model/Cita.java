@@ -12,13 +12,18 @@ public class Cita {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     // datos de la cita
+    @Column(nullable = false)
     private LocalDate fecha;
+    @Column(nullable = false)
     private LocalTime hora;
+    @Column(nullable = false)
     private String estado = "PENDIENTE";
     private LocalTime horadecreaciondelacita;
+    @Column(nullable = false)
     private LocalDate fechadecreaciondelacita;
 
     //  ESTOS CAMPOS SON LOS TEMPORALES PARA VALIDACIÓN: no se guardan ni el email ni la contrasena por que ya estan en  usuario y es mala practica solo los usas para validar los datos no necesitan guardarse en la bdd
+    // no se les puede poner nullavle ni nada de restricciones de bdd
     @Transient
     private String emailqueintentacrearlacita;
     @Transient

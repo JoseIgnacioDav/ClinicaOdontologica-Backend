@@ -62,4 +62,5 @@ public class RespuestaAlLoguaarseDTO {
     public void setRol(String rol) {
         this.rol = rol;
     }
+
 }
