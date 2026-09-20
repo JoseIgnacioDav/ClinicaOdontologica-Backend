@@ -92,7 +92,6 @@ public class Usuario { // nos va a pedir que le pongamos un primary key, (toda t
         return rol;
     }
 
-    public void setRol(String rol) {
-        this.rol = rol;
-    }
+    // eliminacion del set rol por que permitia que un usuario se asigne el rol odontologo
 }
+
