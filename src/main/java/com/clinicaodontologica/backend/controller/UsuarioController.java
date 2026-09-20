@@ -1,5 +1,6 @@
 package com.clinicaodontologica.backend.controller;
 
+import com.clinicaodontologica.backend.dto.response.usuario.RespuestaAlLoguaarseDTO;
 import com.clinicaodontologica.backend.dto.response.usuario.RespuestaAlcrearUsuarioDTO;
 import com.clinicaodontologica.backend.model.Usuario;
 import com.clinicaodontologica.backend.service.UsuarioService;
@@ -42,7 +43,7 @@ public UsuarioController(UsuarioService usuarioService){
     try {
         String email = credencialesporfront.get("email");  // creamos una variable que tomara el valor de la clave que tenga "email"
         String password = credencialesporfront.get("password"); //creamos una variable que tomara el valor de la clave del mapa que contenga  la palabra password
-        Usuario usuarioLogueado = usuarioService.Loginplaintext(email,password); // si el metodo Loginplaintext  de usuarioService se ejecuta sin excepciones se guarda en usuariologueado
+        RespuestaAlLoguaarseDTO usuarioLogueado = usuarioService.login(email,password); // si el metodo Loginplaintext  de usuarioService se ejecuta sin excepciones se guarda en usuariologueado
         return ResponseEntity.ok(usuarioLogueado); // nos devuelve un ok al front y el usuariologueado
     }catch (Exception e){ // si se da una excepcion en el emtodo loginplaintext la captura catch, y obvio no se ejecuta el loginplaintext
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error",e.getMessage())); // nos devuelve un status al front con no autorzado y un mapa con el error como clave  y el mensaje con la excepcion igual que arriba

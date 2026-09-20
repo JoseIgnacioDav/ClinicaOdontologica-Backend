@@ -12,6 +12,7 @@ y coordinar con el repositorio. Ni la base de datos ni los controladores toman d
 
 package com.clinicaodontologica.backend.service;
 
+import com.clinicaodontologica.backend.dto.response.usuario.RespuestaAlLoguaarseDTO;
 import com.clinicaodontologica.backend.dto.response.usuario.RespuestaAlcrearUsuarioDTO;
 import com.clinicaodontologica.backend.model.Usuario;
 import com.clinicaodontologica.backend.repository.UsuarioRepository;
@@ -64,7 +65,7 @@ public class UsuarioService {
 
     }
 
-    public Usuario Loginplaintext (String email,String password) throws Exception{
+    public RespuestaAlLoguaarseDTO login(String email,String password) throws Exception{
         //ponemos <usuario> para que sea un dato opcional de tipo usuario ya abajo te sirve para reconvertirlo
         // si no esta vacio sino
         //pierde el rastro de que era originalmente.
@@ -88,10 +89,17 @@ public class UsuarioService {
         if(!passwordEncoder.matches(password, eldatooptionalenmodousuario.getContrasena())){
             throw new Exception("Lo siento, la contasena es incorrecta");
         }
-        //si todo sale bien devuelve el usuario logueado
-        return eldatooptionalenmodousuario;
+        // return eldatooptionalenmodousuario; esto antes devolvia el usuario al front pero incluia la contrasena cifrada pero igual es una clave que no necesita andar aqui
+        //si todo sale bien devuelve el dto limpio con los datos del usuario para el front
+        RespuestaAlLoguaarseDTO usuariodatoslimitados = new RespuestaAlLoguaarseDTO();
+        usuariodatoslimitados.setId(eldatooptionalenmodousuario.getId());
+        usuariodatoslimitados.setNombres(eldatooptionalenmodousuario.getNombres());
+        usuariodatoslimitados.setApellidos(eldatooptionalenmodousuario.getApellidos());
+        usuariodatoslimitados.setEmail(eldatooptionalenmodousuario.getEmail());
+        usuariodatoslimitados.setCedula(eldatooptionalenmodousuario.getCedula());
+        usuariodatoslimitados.setRol(eldatooptionalenmodousuario.getRol());
 
-
+        return usuariodatoslimitados; // ya no retorna la contrasena al front
     }
 
 }
