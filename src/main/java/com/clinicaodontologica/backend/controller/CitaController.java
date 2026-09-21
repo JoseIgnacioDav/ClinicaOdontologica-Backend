@@ -2,8 +2,10 @@ package com.clinicaodontologica.backend.controller;
 
 import com.clinicaodontologica.backend.dto.request.ConsultaCitaRequestDTO;
 import com.clinicaodontologica.backend.dto.response.cita.ConfirmacionCreacionCitaPAcienteDTO;
+import com.clinicaodontologica.backend.dto.response.usuario.RespuestaAlLoguaarseDTO;
 import com.clinicaodontologica.backend.model.Cita;
 import com.clinicaodontologica.backend.service.CitaService;
+import jakarta.servlet.http.HttpSession;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -22,9 +24,9 @@ public class CitaController {
     public CitaController(CitaService citaService){
         this.citaService = citaService;
     }
-
+    /*
     @PostMapping("/crearcita")
-    public ResponseEntity<?> crearcita (@RequestBody Cita citaqueentraporfront){
+    public ResponseEntity<?> crearcita (@RequestBody Cita citaqueentraporfront, HttpSession session){
         try {
             ConfirmacionCreacionCitaPAcienteDTO citacreada = citaService.crearcita(citaqueentraporfront);
             // si se ejecuta bien chiill
@@ -33,6 +35,22 @@ public class CitaController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error",e.getMessage()));
         }
 
+    }
+    */
+    @PostMapping("/crearcita")
+    public ResponseEntity<?> crearcita (@RequestBody Cita citaquentraporfront, HttpSession session){
+        try{
+            // verificamos la sesion   // le hacemos un casting para que java sepa que queremos que se porte como un respuestaaloguearseDTO y nos deje jalar el atributo session
+            RespuestaAlLoguaarseDTO usuarioSession = (RespuestaAlLoguaarseDTO) session.getAttribute("usuarioLogueado");
+            if(usuarioSession == null){
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error","no hay una sesion activa porfavor inicia sesion"));
+            }
+            // llamo al servicio:
+            ConfirmacionCreacionCitaPAcienteDTO citacreada = citaService.crearcita(citaquentraporfront, usuarioSession.getId());
+            return ResponseEntity.status(HttpStatus.CREATED).body(citacreada);
+        }catch (Exception e){
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error",e.getMessage()));
+        }
     }
 
     @PostMapping("/odontologo/consultarcita") // {TODO}} Confidencial solo permitir con usuario tipo odontologo por token loco

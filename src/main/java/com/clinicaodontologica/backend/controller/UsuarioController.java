@@ -39,12 +39,19 @@ public UsuarioController(UsuarioService usuarioService){
     // misma vaina de arriba
     // se ponre <?> en el responsentity por que puede recibir tanto un tipo Usuario o un map con el e.getmessage()
     // que retornara el contenido string de  la excepcion en forma de mapa
-    @PostMapping("/login") // la ruta del endpoint del login
-    public ResponseEntity<?> login(@RequestBody Map<String,String> credencialesporfront){ // en este metodo le pedimos al front un body con un mapa de dos strings (serian el email y la clave)
+    @PostMapping("/login") // la ruta del endpoint del login                             // le pongo la sesion aqui
+    public ResponseEntity<?> login(@RequestBody Map<String,String> credencialesporfront, HttpSession session){ // en este metodo le pedimos al front un body con un mapa de dos strings (serian el email y la clave)
     try {
         String email = credencialesporfront.get("email");  // creamos una variable que tomara el valor de la clave que tenga "email"
         String password = credencialesporfront.get("password"); //creamos una variable que tomara el valor de la clave del mapa que contenga  la palabra password
-        RespuestaAlLoguaarseDTO usuarioLogueado = usuarioService.login(email,password); // si el metodo Loginplaintext  de usuarioService se ejecuta sin excepciones se guarda en usuariologueado
+        RespuestaAlLoguaarseDTO usuarioLogueado = usuarioService.login(email,password);
+        // si el metodo login  de usuarioService se ejecuta sin excepciones se guarda en usuariologueado
+        //-- guardo los datos del usuario loguedo en la sesion del servidor-----
+        /*aqui pasa lo siguiente:
+        * Crea una sesión nueva para este usuario, guárdale su información y emite la
+        * cookie JSESSIONID*/
+        session.setAttribute("usuarioLoguado",usuarioLogueado);
+        /////
         return ResponseEntity.ok(usuarioLogueado); // nos devuelve un ok al front y el usuariologueado
     }catch (Exception e){ // si se da una excepcion en el emtodo loginplaintext la captura catch, y obvio no se ejecuta el loginplaintext
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error",e.getMessage())); // nos devuelve un status al front con no autorzado y un mapa con el error como clave  y el mensaje con la excepcion igual que arriba
