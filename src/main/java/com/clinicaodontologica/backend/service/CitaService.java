@@ -26,45 +26,54 @@ public class CitaService {
         this.usuarioRepository= usuarioRepository;
         this.passwordEncoder = passwordEncoder;
     }
+    // agrego la sesion como uno de los parametros que necesita para crear la cita
+    public ConfirmacionCreacionCitaPAcienteDTO crearcita (Cita citaqueintentancrear,Long pacienteIdsesion)throws Exception{
+        // busco al paciente en la bdd usando el id seguro
+        Optional<Usuario> usuariologueado = usuarioRepository.findById(pacienteIdsesion);
+        //verifico si existe
+        if(usuariologueado.isEmpty()){
+            throw new Exception("usuario no encontrado");
+        }
+        // si pasa el if ya sabemos que no esta vacio entonces lo convertimos en usuario para acceder al rol
+        Usuario usuarioLogueadomodousuario = usuariologueado.get();
+        // Evaluamos quien crea la cita por el rol
+        if(usuarioLogueadomodousuario.getRol().equals("PACIENTE")){
+            // si es paciente ignoramos culaquier cosa del json
+            // y le asignamos su propio id de la sesion
+            citaqueintentancrear.setPaciente(usuarioLogueadomodousuario);
+        } else if (usuarioLogueadomodousuario.getRol().equals("ODONTOLOGO") || usuarioLogueadomodousuario.getRol().equals("ADMIN")) {
+            // si el rol es odontologo o admun se permite que se traiga el id del paciente al que se le va a agendar la cita
+            if (citaqueintentancrear.getPaciente() == null || citaqueintentancrear.getPaciente().getId() == null) {
+                throw new Exception("Debe especificar el id del paciente para esta cita");
+            }
+            Optional<Usuario> pacienteOPTDelJson = usuarioRepository.findById(citaqueintentancrear.getPaciente().getId());
+            // checamos si el optional esta vacio
+            if (pacienteOPTDelJson.isEmpty()) {
+                throw new Exception("El paciente indicado no existe en la bdd");
+            }
+            // si pasa el if lo saco de optional y se lo pongo a un usuaario
+            Usuario pacienteDelJson = pacienteOPTDelJson.get();
+            citaqueintentancrear.setPaciente(pacienteDelJson);
+        }
+        // guardo la cita en la bdd
+            citaRepository.save(citaqueintentancrear);
+            // devuelvo con un dto para no exponer datos
+            ConfirmacionCreacionCitaPAcienteDTO citaqueintentancrearsindatosexpuestos = new ConfirmacionCreacionCitaPAcienteDTO();
+            citaqueintentancrearsindatosexpuestos.setId(citaqueintentancrear.getId());
+            citaqueintentancrearsindatosexpuestos.setEstado(citaqueintentancrear.getEstado());
+            citaqueintentancrearsindatosexpuestos.setHora(citaqueintentancrear.getHora());
+            citaqueintentancrearsindatosexpuestos.setFecha(citaqueintentancrear.getFecha());
+            // llenado de nombres para la respuesta que va por front
+            citaqueintentancrearsindatosexpuestos.setNombrepaciente(citaqueintentancrear.getPaciente().getNombres() + " " + citaqueintentancrear.getPaciente().getApellidos());
+            Usuario odontologoqueatenderalacita = usuarioRepository.findById(citaqueintentancrear.getOdontologo().getId()).orElse(null);
+            if (odontologoqueatenderalacita != null){
+                citaqueintentancrearsindatosexpuestos.setNombreodontologo(odontologoqueatenderalacita.getNombres()+" "+ odontologoqueatenderalacita.getApellidos());
+            }
+            return citaqueintentancrearsindatosexpuestos;
 
-    public ConfirmacionCreacionCitaPAcienteDTO crearcita (Cita citaqueintentancrear)throws Exception{
-        // esta madre esta inseguro luego me toca hacer lo del token por que sino esta full atacable solo es cuestion de meterse a esta ruta e inyectar datos
-        //llamamos al usuario que trata de crear la cita por email
-        Optional<Usuario> usuarioquetratadecrearlacita = usuarioRepository.findByEmail(citaqueintentancrear.getEmailqueintentacrearlacita());
-        if (usuarioquetratadecrearlacita.isEmpty()){
-            throw new Exception("permiso denegado");
-        }
-        //vamos a comprobar si metio bien la clave  primero lo pasamos a modo usuario por q sabemos que no esta vacio
-        Usuario usuarioquetratadecrearlacitamodousuario = usuarioquetratadecrearlacita.get();
-        if (!passwordEncoder.matches(citaqueintentancrear.getPassworddelmailquetratadecrearlacita(),usuarioquetratadecrearlacitamodousuario.getContrasena())){
-            throw new Exception("permiso denegado");
-        }
-        // si el usuario si existe y metio bien la clave, lo vamos a guardar pero primero tenemos que cifrar la clave de la cita
-        String passwordcitatextoplano = citaqueintentancrear.getPassworddelmailquetratadecrearlacita();
-        String clavecifrafadelacita = passwordEncoder.encode(passwordcitatextoplano);
-        citaqueintentancrear.setPassworddelmailquetratadecrearlacita(clavecifrafadelacita);
-        citaRepository.save(citaqueintentancrear);
 
-        ConfirmacionCreacionCitaPAcienteDTO citaqueintetancrearsindatosexpuestos = new ConfirmacionCreacionCitaPAcienteDTO();
-        citaqueintetancrearsindatosexpuestos.setId(citaqueintentancrear.getId());
-        citaqueintetancrearsindatosexpuestos.setEstado(citaqueintentancrear.getEstado());
-        citaqueintetancrearsindatosexpuestos.setHora(citaqueintentancrear.getHora());
-        citaqueintetancrearsindatosexpuestos.setFecha(citaqueintentancrear.getFecha());
-        //{todo}   al momento de crear la cita se le pasa el id como unico parametro conectado con usuario,
-        //{todo} por eso jackson crea un usuario por debajo solo con el id, todo lo demas va null, si despues le pido que obtenga esos datos de paciente como no fueron puestso en el post, no los tiene y si los llamo asi va a dar error
-        // {todo}   citaqueintetancrearsindatosexpuestos.setNombrepaciente(citaqueintentancrear.getPaciente().getNombres() + " " +citaqueintentancrear.getPaciente().getApellidos()); // no tiene los datos del paciente por que no se los meti en el post solo el id
-        // por eso toca crear un usuario para que si tenga los datos llamados por la bdd., te preguntaras por que no reciclaste
-        // el que ya tenias arriba llamado: {todo}  [usuarioquetratadecrearlacitamodousuario] que pasa si el que trata de crear la cita no es el mismo que el que va a recibir la cita?  ( como un odontologo o una recepcionista)
-        // por eso toca llamar al usuario desde la bdd con el id que si se paso por el post, tampoco hay los datos del odontologo por la misma razon
-        Usuario pacientequerecibiralacita = usuarioRepository.findById(citaqueintentancrear.getPaciente().getId()).orElse(null);
-        Usuario odontologoqueatenderalacita = usuarioRepository.findById(citaqueintentancrear.getOdontologo().getId()).orElse(null);
-        if (pacientequerecibiralacita != null){
-            citaqueintetancrearsindatosexpuestos.setNombrepaciente(pacientequerecibiralacita.getNombres() + " " + pacientequerecibiralacita.getApellidos());
-        }
-        if (odontologoqueatenderalacita != null){
-            citaqueintetancrearsindatosexpuestos.setNombreodontologo(odontologoqueatenderalacita.getNombres() + " " + odontologoqueatenderalacita.getApellidos());
-        }
-        return citaqueintetancrearsindatosexpuestos;
+            // la logica anterior pedia email y contrasena para validar la creacion de una cita  ahora se usa el sesion id y el rol
+
     }
 
 
