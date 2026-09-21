@@ -33,7 +33,7 @@ Con un Bean, tú le dices a Spring: "Oye, fabrica una sola vez esta herramienta,
         //// Cualquier otra petición que llegue al sistema exigirá que el usuario esté autenticado .anyRequest().authenticated()
         http.csrf(csrf ->csrf.disable()).
                 authorizeHttpRequests(auth -> auth // quito a "/citas/** de los endpoints publicos
-                        .requestMatchers("/api/auth/register","/api/auth/login")
+                        .requestMatchers("/api/auth/register", "/api/auth/login", "/citas/**")
                         .permitAll()
                         .anyRequest()
                         .authenticated()

@@ -4,6 +4,7 @@ import com.clinicaodontologica.backend.dto.request.ConsultaCitaRequestDTO;
 import com.clinicaodontologica.backend.dto.response.cita.ConfirmacionCreacionCitaPAcienteDTO;
 import com.clinicaodontologica.backend.dto.response.usuario.RespuestaAlLoguaarseDTO;
 import com.clinicaodontologica.backend.model.Cita;
+import com.clinicaodontologica.backend.model.Usuario;
 import com.clinicaodontologica.backend.service.CitaService;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.http.HttpStatus;
@@ -53,17 +54,38 @@ public class CitaController {
         }
     }
 
-    @PostMapping("/odontologo/consultarcita") // {TODO}} Confidencial solo permitir con usuario tipo odontologo por token loco
-    /*public ResponseEntity<?> consultarcita(@RequestBody Usuario odontologo, @Requestparam LocalDate fecha){ // aqui te tocaba meter
-    request param por que solo puede tener un bodu asi que usaremos un dto para mandar todod dentro del body
-        return ResponseEntity.ok(citaService.disponibilidadOdontologo(odontologo,fecha));
-    }*/
-                                            // {todo} tengo que poner una logica para que el odontologo solo pueda consultar sus propias citas despues
-   public ResponseEntity<?> consultarcita(@RequestBody ConsultaCitaRequestDTO request){ // aqui le pides directamente al dto spring lo hace automatico abre el dto literal solo con el constructor y los getters y setters lo hace solito
-       //aqui extraogo o que necesito del dto
+    @PostMapping("/odontologo/consultarcita") //
+
+   public ResponseEntity<?> consultarcita(@RequestBody ConsultaCitaRequestDTO request,HttpSession session){
+       // uso el dto ConsultacitaRequest para poder recibir el odontologo y la fecha en el body
+        // solo admin puede ver las citas de otros odontologos, por default los fuerza a ver solo sus paciente
+        RespuestaAlLoguaarseDTO usuarioSession = (RespuestaAlLoguaarseDTO) session.getAttribute("usuarioLogueado");
+        if(usuarioSession == null){
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error","No hay sesion activa"));
+        }
+        // si hay sesion activa valido el rol
+        if(!usuarioSession.getRol().equalsIgnoreCase("ODONTOLOGO")&& !usuarioSession.getRol().equalsIgnoreCase("ADMIN")){
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("Error","Acceso Restringido"));
+        }
+        //------------------blindo por rol-----------
+        if (usuarioSession.getRol().equalsIgnoreCase("ODONTOLOGO")){
+            // me aseguro que el objeto odontologo tenga el id del odontologo logueado
+            if(request.getOdontologo() == null){
+                request.setOdontologo(new Usuario());
+            }
+            request.getOdontologo().setId(usuarioSession.getId());
+        }
+        /// -----------------------------------------------------si no entra en el if de odontologo es por que es admin
         return ResponseEntity.ok(citaService.disponibilidadOdontologo(request.getOdontologo(),request.getFecha()));
 
     }
+
+
+
+
+
+
+
 
 
     @PostMapping("/paciente/consultarcita")

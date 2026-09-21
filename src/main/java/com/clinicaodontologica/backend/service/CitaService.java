@@ -37,11 +37,11 @@ public class CitaService {
         // si pasa el if ya sabemos que no esta vacio entonces lo convertimos en usuario para acceder al rol
         Usuario usuarioLogueadomodousuario = usuariologueado.get();
         // Evaluamos quien crea la cita por el rol
-        if(usuarioLogueadomodousuario.getRol().equals("PACIENTE")){
+        if(usuarioLogueadomodousuario.getRol().equalsIgnoreCase("PACIENTE")){
             // si es paciente ignoramos culaquier cosa del json
             // y le asignamos su propio id de la sesion
             citaqueintentancrear.setPaciente(usuarioLogueadomodousuario);
-        } else if (usuarioLogueadomodousuario.getRol().equals("ODONTOLOGO") || usuarioLogueadomodousuario.getRol().equals("ADMIN")) {
+        } else if (usuarioLogueadomodousuario.getRol().equalsIgnoreCase("ODONTOLOGO") || usuarioLogueadomodousuario.getRol().equals("ADMIN")) {
             // si el rol es odontologo o admun se permite que se traiga el id del paciente al que se le va a agendar la cita
             if (citaqueintentancrear.getPaciente() == null || citaqueintentancrear.getPaciente().getId() == null) {
                 throw new Exception("Debe especificar el id del paciente para esta cita");

@@ -50,7 +50,7 @@ public UsuarioController(UsuarioService usuarioService){
         /*aqui pasa lo siguiente:
         * Crea una sesión nueva para este usuario, guárdale su información y emite la
         * cookie JSESSIONID*/
-        session.setAttribute("usuarioLoguado",usuarioLogueado);
+        session.setAttribute("usuarioLogueado",usuarioLogueado);
         /////
         return ResponseEntity.ok(usuarioLogueado); // nos devuelve un ok al front y el usuariologueado
     }catch (Exception e){ // si se da una excepcion en el emtodo loginplaintext la captura catch, y obvio no se ejecuta el loginplaintext

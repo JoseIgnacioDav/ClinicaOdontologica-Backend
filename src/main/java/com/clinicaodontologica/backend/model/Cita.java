@@ -24,10 +24,8 @@ public class Cita {
 
     //  ESTOS CAMPOS SON LOS TEMPORALES PARA VALIDACIÓN: no se guardan ni el email ni la contrasena por que ya estan en  usuario y es mala practica solo los usas para validar los datos no necesitan guardarse en la bdd
     // no se les puede poner nullavle ni nada de restricciones de bdd
-    @Transient
-    private String emailqueintentacrearlacita;
-    @Transient
-    private String passworddelmailquetratadecrearlacita;
+
+    // eliminacion de los atributos para validar la creacion de las citas, ahora se hace con cookies y por rol
 
     // relaciones con la bdd de usuarios
     @ManyToOne// relacion many to one por que un odontologo puede tener muchas citas
@@ -105,21 +103,6 @@ public class Cita {
         return fechadecreaciondelacita;
     }
 
-    public String getEmailqueintentacrearlacita() {
-        return emailqueintentacrearlacita;
-    }
-
-    public void setEmailqueintentacrearlacita(String emailqueintentacrearlacita) {
-        this.emailqueintentacrearlacita = emailqueintentacrearlacita;
-    }
-
-    public String getPassworddelmailquetratadecrearlacita() {
-        return passworddelmailquetratadecrearlacita;
-    }
-
-    public void setPassworddelmailquetratadecrearlacita(String passworddelmailquetratadecrearlacita) {
-        this.passworddelmailquetratadecrearlacita = passworddelmailquetratadecrearlacita;
-    }
 
     public void setFechadecreaciondelacita(LocalDate fechadecreaciondelacita) {
         this.fechadecreaciondelacita = fechadecreaciondelacita;
