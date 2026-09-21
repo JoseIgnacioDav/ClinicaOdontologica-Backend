@@ -11,7 +11,6 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 // le dice que esta clase es un restcontroller a spring
-@CrossOrigin(origins = "*")
 @RestController
 @RequestMapping("/api/auth") // todos los endpoints partiran de esta ruta
 public class UsuarioController {
@@ -22,7 +21,7 @@ public UsuarioController(UsuarioService usuarioService){
 }
 
 
-//   {TODO}    el endpoint de registro
+    // el endpoint de registro
     // se ponre <?> en el responsentity por que puede recibir tanto un tipo Usuario o un map con el e.getmessage() que retornara el contenido string de  la excepcion en forma de mapa
     @PostMapping("/register") // le indico la ruta de este endpoint
     public ResponseEntity<?> registrar(@RequestBody Usuario usuarioaqueentraporfront){ // creo el metodo registrar que va a pedir en el body un Usuario que tenga todos los campos que se pide en el model
@@ -34,9 +33,8 @@ public UsuarioController(UsuarioService usuarioService){
     }
  }
 
-    // {TODO}      el endpoint del login
 
-    // misma vaina de arriba
+    // lo mismo de arriba
     // se ponre <?> en el responsentity por que puede recibir tanto un tipo Usuario o un map con el e.getmessage()
     // que retornara el contenido string de  la excepcion en forma de mapa
     @PostMapping("/login") // la ruta del endpoint del login                             // le pongo la sesion aqui

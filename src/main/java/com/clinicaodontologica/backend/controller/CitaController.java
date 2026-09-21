@@ -25,19 +25,7 @@ public class CitaController {
     public CitaController(CitaService citaService){
         this.citaService = citaService;
     }
-    /*
-    @PostMapping("/crearcita")
-    public ResponseEntity<?> crearcita (@RequestBody Cita citaqueentraporfront, HttpSession session){
-        try {
-            ConfirmacionCreacionCitaPAcienteDTO citacreada = citaService.crearcita(citaqueentraporfront);
-            // si se ejecuta bien chiill
-            return ResponseEntity.status(HttpStatus.CREATED).body(citacreada);
-        }catch (Exception e){
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error",e.getMessage()));
-        }
-
-    }
-    */
+   //borrado de funcion comentada
     @PostMapping("/crearcita")
     public ResponseEntity<?> crearcita (@RequestBody Cita citaquentraporfront, HttpSession session){
         try{
@@ -79,13 +67,6 @@ public class CitaController {
         return ResponseEntity.ok(citaService.disponibilidadOdontologo(request.getOdontologo(),request.getFecha()));
 
     }
-
-
-
-
-
-
-
 
 
     @PostMapping("/paciente/consultarcita")
