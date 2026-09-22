@@ -58,6 +58,8 @@ public class CitaService {
             Usuario pacienteDelJson = pacienteOPTDelJson.get();
             citaqueintentancrear.setPaciente(pacienteDelJson);
         }
+        // obligo a toda cita a nacer como pendiente
+            citaqueintentancrear.setEstado("PENDIENTE");
         // guardo la cita en la bdd
             citaRepository.save(citaqueintentancrear);
             // devuelvo con un dto para no exponer datos
