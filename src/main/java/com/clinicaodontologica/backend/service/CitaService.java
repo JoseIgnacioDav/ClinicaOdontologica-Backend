@@ -5,6 +5,7 @@ import com.clinicaodontologica.backend.dto.response.cita.ConfirmacionCreacionCit
 import com.clinicaodontologica.backend.dto.response.cita.ConsultarCitasLibresOdontologoPacientePublicDTO;
 import com.clinicaodontologica.backend.dto.response.cita.ConsultarCitasOdontologoConfidentialResponseDTO;
 import com.clinicaodontologica.backend.dto.response.cita.ListarOdontologosDTO;
+import com.clinicaodontologica.backend.dto.response.usuario.RespuestaAlLoguaarseDTO;
 import com.clinicaodontologica.backend.model.Cita;
 import com.clinicaodontologica.backend.model.Usuario;
 import com.clinicaodontologica.backend.repository.CitaRepository;
@@ -175,4 +176,22 @@ public class CitaService {
         return listaodontologoslimipia;
     }
 
+    public Cita actualizarestado(Long citaId, String nuevoEstado, RespuestaAlLoguaarseDTO usuarioSession) {
+        Optional<Cita> citaopt = citaRepository.findById(citaId);
+        if (citaopt.isEmpty()) {
+            throw new RuntimeException("Cita no encontrada");
+        }
+
+        Cita cita = citaopt.get();
+
+        // Si es odontólogo, validamos que la cita sea suya de forma segura
+        if (usuarioSession.getRol().equalsIgnoreCase("ODONTOLOGO")) {
+            if (cita.getOdontologo() == null || !cita.getOdontologo().getId().equals(usuarioSession.getId())) {
+                throw new RuntimeException("Permiso Denegado");
+            }
+        }
+
+        cita.setEstado(nuevoEstado);
+        return citaRepository.save(cita); //
+    }
 }

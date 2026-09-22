@@ -93,4 +93,26 @@ public class CitaController {
         return ResponseEntity.ok(citaService.consultarcitaspropiaspaciente(usuarioSession.getId()));
     }
 
+    @PutMapping("/{id}/estado")
+    public ResponseEntity<?> actualizarEstadocita(@PathVariable Long id,@RequestBody Map<String,String> body,HttpSession session){
+        RespuestaAlLoguaarseDTO usuarioSession = (RespuestaAlLoguaarseDTO) session.getAttribute("usuarioLogueado");
+        if(usuarioSession == null){
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error","no hay sesion activa"));
+        }
+        //valido roles permitidos para mover los estados (solo si eres odontologo o admin)
+        if (!usuarioSession.getRol().equalsIgnoreCase("ODONTOLOGO")&& !usuarioSession.getRol().equalsIgnoreCase("ADMIN")){
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error","Acceso Restringido"));
+        }
+        try{
+            String nuevoEstado = body.get("estado");
+            Cita citaActualizada = citaService.actualizarestado(id, nuevoEstado,usuarioSession);
+            return ResponseEntity.ok(citaActualizada);
+        }catch (Exception e){
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error",e.getMessage()));
+
+        }
+    }
+
+
+
 }
