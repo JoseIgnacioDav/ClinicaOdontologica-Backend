@@ -3,30 +3,124 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Panel Odontólogo</title>
+    <title>Panel de Control - Clínica Odontológica</title>
     <link rel="stylesheet" href="style.css">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f7f6;
+            margin: 0;
+            padding: 20px;
+        }
+        .dashboard-container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .header-card, .card {
+            background: #ffffff;
+            padding: 20px 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            margin-bottom: 20px;
+        }
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 1.5rem;
+        }
+        @media (max-width: 600px) {
+            .form-row { grid-template-columns: 1fr; }
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-control-select, .form-control {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 14px;
+            margin-top: 5px;
+            box-sizing: border-box;
+        }
+        .btn-logout {
+            background-color: #e74c3c;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        .btn-logout:hover { background-color: #c0392b; }
+        .btn-primary {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            width: 100%;
+        }
+        .btn-primary:hover { background-color: #2980b9; }
+        .cita-item {
+            background: #f8f9fa;
+            border-left: 4px solid #2ecc71;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .badge {
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .badge-pendiente { background-color: #fff3cd; color: #856404; }
+        .empty-state {
+            text-align: center;
+            color: #666;
+            padding: 20px;
+        }
+    </style>
 </head>
 <body>
-<nav class="navbar">
-    <div class="logo"> Panel Odontólogo</div>
-    <div class="user-info">
-        <span class="user-name" id="userName"></span>
-        <button class="btn btn-secondary" onclick="logout()">Cerrar sesión</button>
+
+<div class="dashboard-container">
+    <!-- CABECERA -->
+    <div class="header-card" style="display: flex; justify-content: space-between; align-items: center;">
+        <div>
+            <h2 style="margin: 0; color: #2c3e50;" id="panelTitle">Panel Profesional</h2>
+            <p id="userName" style="margin: 5px 0 0 0; color: #7f8c8d; font-size: 14px;">Cargando usuario...</p>
+        </div>
+        <button class="btn-logout" onclick="logout()">Cerrar sesión</button>
     </div>
-</nav>
 
-<main class="main">
-    <h1 class="page-title">Mis citas</h1>
-    <p class="page-subtitle">Consulta las citas asignadas</p>
-
+    <!-- SECCIÓN DE CONSULTA DE CITAS -->
     <div class="card">
-        <div class="form-row" style="margin-bottom: 1.5rem;">
+        <h1 class="page-title" style="margin-top: 0; font-size: 22px; color: #2c3e50;">Agenda de Citas</h1>
+        <p class="page-subtitle" style="color: #666; font-size: 14px; margin-bottom: 20px;">Consulta las citas asignadas según la fecha y el especialista.</p>
+
+        <!-- SELECTOR DE ODONTÓLOGO (Solo visible / funcional si es ADMIN, de lo contrario se oculta o se bloquea visualmente) -->
+        <div class="form-group" id="adminOdontologoContainer" style="display: none;">
+            <label><strong>Seleccionar Odontólogo (Modo Administrador):</strong></label>
+            <select id="selectOdontologo" class="form-control-select">
+                <option value="">Cargando odontólogos...</option>
+            </select>
+        </div>
+
+        <div class="form-row">
             <div class="form-group">
-                <label>Fecha</label>
-                <input type="date" id="fechaConsulta">
+                <label><strong>Fecha de Consulta:</strong></label>
+                <input type="date" id="fechaConsulta" class="form-control">
             </div>
             <div class="form-group" style="display: flex; align-items: flex-end;">
-                <button class="btn btn-primary" onclick="consultarCitas()" style="width: 100%;">
+                <button class="btn btn-primary" onclick="consultarCitas()">
                     Buscar citas
                 </button>
             </div>
@@ -38,20 +132,59 @@
             </div>
         </div>
     </div>
-</main>
+</div>
 
 <script>
     const API = 'http://localhost:8080';
 
+    // 1. Validar sesión y rol al cargar la página
     const usuario = JSON.parse(localStorage.getItem('usuario') || 'null');
     if (!usuario || (usuario.rol !== 'ODONTOLOGO' && usuario.rol !== 'ADMIN')) {
         window.location.href = 'index.html';
     } else {
-        document.getElementById('userName').textContent = `${usuario.nombres} (${usuario.rol})`;
+        document.getElementById('userName').textContent = `${usuario.nombres || ''} ${usuario.apellidos || ''} — Rol: [${usuario.rol}]`;
+        document.getElementById('panelTitle').textContent = usuario.rol === 'ADMIN' ? 'Panel de Administrador' : 'Panel Odontólogo';
     }
 
     // Fecha de hoy por defecto
     document.getElementById('fechaConsulta').valueAsDate = new Date();
+
+    document.addEventListener('DOMContentLoaded', async () => {
+        // Si es Admin, mostramos el selector de odontólogos y cargamos la lista
+        if (usuario.rol === 'ADMIN') {
+            document.getElementById('adminOdontologoContainer').style.display = 'block';
+            await cargarOdontologos();
+        }
+        // Consultamos automáticamente las citas del día actual
+        consultarCitas();
+    });
+
+    async function cargarOdontologos() {
+        const select = document.getElementById('selectOdontologo');
+        try {
+            const res = await fetch(`${API}/citas/listarodontologos`, { credentials: 'include' });
+            if (!res.ok) throw new Error('Error al listar odontólogos');
+
+            const odontologos = await res.json();
+            select.innerHTML = '';
+
+            if (odontologos.length === 0) {
+                select.innerHTML = '<option value="">No hay odontólogos registrados</option>';
+                return;
+            }
+
+            odontologos.forEach(odonto => {
+                const option = document.createElement('option');
+                const nombreCompleto = odonto.nombreCompleto || `${odonto.nombres || ''} ${odonto.apellidos || ''}`.trim() || `ID: ${odonto.id}`;
+                option.value = odonto.id;
+                option.textContent = nombreCompleto;
+                select.appendChild(option);
+            });
+        } catch (err) {
+            console.error(err);
+            select.innerHTML = '<option value="">Error al cargar odontólogos</option>';
+        }
+    }
 
     function logout() {
         localStorage.removeItem('usuario');
@@ -63,11 +196,21 @@
         const lista = document.getElementById('listaCitas');
 
         if (!fecha) {
-            lista.innerHTML = '<div class="empty-state"><p>Selecciona una fecha</p></div>';
+            lista.innerHTML = '<div class="empty-state"><p>Selecciona una fecha válida</p></div>';
             return;
         }
 
-        lista.innerHTML = '<div class="empty-state"><p>Cargando...</p></div>';
+        lista.innerHTML = '<div class="empty-state"><p>Cargando citas...</p></div>';
+
+        // Preparamos el payload según el rol
+        let odontologoPayload = { id: usuario.id }; // Por defecto el del propio usuario logueado
+
+        if (usuario.rol === 'ADMIN') {
+            const selectOdonto = document.getElementById('selectOdontologo');
+            if (selectOdonto && selectOdonto.value) {
+                odontologoPayload = { id: parseInt(selectOdonto.value) };
+            }
+        }
 
         try {
             const res = await fetch(`${API}/citas/odontologo/consultarcita`, {
@@ -75,7 +218,7 @@
                 headers: { 'Content-Type': 'application/json' },
                 credentials: 'include',
                 body: JSON.stringify({
-                    odontologo: { id: usuario.id },
+                    odontologo: odontologoPayload,
                     fecha: fecha
                 })
             });
@@ -83,31 +226,34 @@
             const data = await res.json();
 
             if (!res.ok) {
-                lista.innerHTML = `<div class="empty-state"><p>${data.error || data.Error || 'Error'}</p></div>`;
+                lista.innerHTML = `<div class="empty-state"><p style="color: red;">${data.error || data.Error || 'Error al obtener la información'}</p></div>`;
                 return;
             }
 
             if (!data || data.length === 0) {
-                lista.innerHTML = '<div class="empty-state"><p>No hay citas para esta fecha</p></div>';
+                lista.innerHTML = '<div class="empty-state"><p>No hay citas programadas para esta fecha</p></div>';
                 return;
             }
 
+            // Renderizar la lista de citas delicadas (paciente, cédula, email, hora)
             lista.innerHTML = data.map(cita => `
-                    <div class="cita-item">
-                        <div class="cita-info">
-                            <strong>${cita.hora} – ${cita.nombrePaciente}</strong>
-                            <span>Cédula: ${cita.cedulapaciente || '—'} · ${cita.emailpaciente || ''}</span>
+                <div class="cita-item">
+                    <div class="cita-info">
+                        <strong style="font-size: 16px; color: #2c3e50;">🕒 ${cita.hora ? cita.hora.substring(0, 5) : ''} – ${cita.nombrePaciente || 'Paciente'}</strong>
+                        <div style="font-size: 13px; color: #555; margin-top: 4px;">
+                            <span>Cédula: <strong>${cita.cedulapaciente || '—'}</strong></span> ·
+                            <span>Email: <strong>${cita.emailpaciente || '—'}</strong></span>
                         </div>
-                        <span class="badge badge-pendiente">${cita.estado}</span>
                     </div>
-                `).join('');
+                    <span class="badge badge-pendiente">${cita.estado || 'CONFIRMADA'}</span>
+                </div>
+            `).join('');
+
         } catch (err) {
-            lista.innerHTML = '<div class="empty-state"><p>Error de conexión</p></div>';
+            console.error(err);
+            lista.innerHTML = '<div class="empty-state"><p style="color: red;">Error de conexión con el servidor</p></div>';
         }
     }
-
-    // Cargar automáticamente al abrir
-    consultarCitas();
 </script>
 </body>
 </html>
