@@ -13,7 +13,7 @@
             padding: 20px;
         }
         .dashboard-container {
-            max-width: 800px;
+            max-width: 850px;
             margin: 0 auto;
         }
         .header-card, .card {
@@ -67,21 +67,29 @@
         .btn-primary:hover { background-color: #2980b9; }
         .cita-item {
             background: #f8f9fa;
-            border-left: 4px solid #2ecc71;
+            border-left: 4px solid #3498db;
             padding: 15px;
             border-radius: 6px;
-            margin-bottom: 10px;
+            margin-bottom: 12px;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            gap: 15px;
         }
-        .badge {
-            padding: 5px 10px;
-            border-radius: 4px;
-            font-size: 12px;
-            font-weight: bold;
+        .cita-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
-        .badge-pendiente { background-color: #fff3cd; color: #856404; }
+        .select-estado {
+            padding: 6px 10px;
+            border-radius: 6px;
+            border: 1px solid #bdc3c7;
+            font-size: 13px;
+            background-color: #fff;
+            cursor: pointer;
+            font-weight: 600;
+        }
         .empty-state {
             text-align: center;
             color: #666;
@@ -104,9 +112,9 @@
     <!-- SECCIÓN DE CONSULTA DE CITAS -->
     <div class="card">
         <h1 class="page-title" style="margin-top: 0; font-size: 22px; color: #2c3e50;">Agenda de Citas</h1>
-        <p class="page-subtitle" style="color: #666; font-size: 14px; margin-bottom: 20px;">Consulta las citas asignadas según la fecha y el especialista.</p>
+        <p class="page-subtitle" style="color: #666; font-size: 14px; margin-bottom: 20px;">Consulta y gestiona el estado de las citas asignadas.</p>
 
-        <!-- SELECTOR DE ODONTÓLOGO (Solo visible / funcional si es ADMIN, de lo contrario se oculta o se bloquea visualmente) -->
+        <!-- SELECTOR DE ODONTÓLOGO (Solo visible si es ADMIN) -->
         <div class="form-group" id="adminOdontologoContainer" style="display: none;">
             <label><strong>Seleccionar Odontólogo (Modo Administrador):</strong></label>
             <select id="selectOdontologo" class="form-control-select">
@@ -150,12 +158,10 @@
     document.getElementById('fechaConsulta').valueAsDate = new Date();
 
     document.addEventListener('DOMContentLoaded', async () => {
-        // Si es Admin, mostramos el selector de odontólogos y cargamos la lista
         if (usuario.rol === 'ADMIN') {
             document.getElementById('adminOdontologoContainer').style.display = 'block';
             await cargarOdontologos();
         }
-        // Consultamos automáticamente las citas del día actual
         consultarCitas();
     });
 
@@ -202,13 +208,12 @@
 
         lista.innerHTML = '<div class="empty-state"><p>Cargando citas...</p></div>';
 
-        // Preparamos el payload según el rol
-        let odontologoPayload = { id: usuario.id }; // Por defecto el del propio usuario logueado
+        let odontologoPayload = { id: usuario.id };
 
         if (usuario.rol === 'ADMIN') {
             const selectOdonto = document.getElementById('selectOdontologo');
             if (selectOdonto && selectOdonto.value) {
-                odontologoPayload = { id: parseInt(selectOdonto.value) };
+                odontologoPayload = { id: parseInt(selectOdontologo.value) };
             }
         }
 
@@ -235,23 +240,60 @@
                 return;
             }
 
-            // Renderizar la lista de citas delicadas (paciente, cédula, email, hora)
-            lista.innerHTML = data.map(cita => `
-                <div class="cita-item">
-                    <div class="cita-info">
-                        <strong style="font-size: 16px; color: #2c3e50;">🕒 ${cita.hora ? cita.hora.substring(0, 5) : ''} – ${cita.nombrePaciente || 'Paciente'}</strong>
-                        <div style="font-size: 13px; color: #555; margin-top: 4px;">
-                            <span>Cédula: <strong>${cita.cedulapaciente || '—'}</strong></span> ·
-                            <span>Email: <strong>${cita.emailpaciente || '—'}</strong></span>
+            // Renderizar la lista con el menú desplegable de estados
+            lista.innerHTML = data.map(cita => {
+                const estadoActual = cita.estado ? cita.estado.toUpperCase() : 'PENDIENTE';
+                return `
+                    <div class="cita-item">
+                        <div class="cita-info">
+                            <strong style="font-size: 16px; color: #2c3e50;">🕒 ${cita.hora ? cita.hora.substring(0, 5) : ''} – ${cita.nombrePaciente || 'Paciente'}</strong>
+                            <div style="font-size: 13px; color: #555; margin-top: 4px;">
+                                <span>Cédula: <strong>${cita.cedulapaciente || '—'}</strong></span> ·
+                                <span>Email: <strong>${cita.emailpaciente || '—'}</strong></span>
+                            </div>
+                        </div>
+                        <div class="cita-actions">
+                            <select class="select-estado" onchange="cambiarEstadoCita(${cita.id}, this.value)">
+                                <option value="PENDIENTE" ${estadoActual === 'PENDIENTE' ? 'selected' : ''}>PENDIENTE</option>
+                                <option value="CONFIRMADA" ${estadoActual === 'CONFIRMADA' ? 'selected' : ''}>CONFIRMADA</option>
+                                <option value="COMPLETADA" ${estadoActual === 'COMPLETADA' ? 'selected' : ''}>COMPLETADA</option>
+                                <option value="CANCELADA" ${estadoActual === 'CANCELADA' ? 'selected' : ''}>CANCELADA</option>
+                            </select>
                         </div>
                     </div>
-                    <span class="badge badge-pendiente">${cita.estado || 'CONFIRMADA'}</span>
-                </div>
-            `).join('');
+                `;
+            }).join('');
 
         } catch (err) {
             console.error(err);
             lista.innerHTML = '<div class="empty-state"><p style="color: red;">Error de conexión con el servidor</p></div>';
+        }
+    }
+
+    // Función para invocar el endpoint PUT y actualizar el estado al cambiar la opción del select
+    async function cambiarEstadoCita(citaId, nuevoEstado) {
+        try {
+            const res = await fetch(`${API}/citas/${citaId}/estado`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({ estado: nuevoEstado })
+            });
+
+            const data = await res.json();
+
+            if (!res.ok) {
+                alert(data.error || 'No se pudo actualizar el estado');
+                consultarCitas(); // Recarga para revertir visualmente si falló
+                return;
+            }
+
+            // Opcional: una pequeña notificación sutil o simplemente se queda guardado
+            console.log('Estado actualizado con éxito:', data.estado);
+        } catch (err) {
+            console.error(err);
+            alert('Error de conexión al intentar cambiar el estado');
+            consultarCitas();
         }
     }
 </script>
