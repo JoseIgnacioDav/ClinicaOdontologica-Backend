@@ -1,8 +1,10 @@
 package com.clinicaodontologica.backend.service;
 
+import com.clinicaodontologica.backend.dto.response.cita.ConsultarcitasagendadaspacienteDTO;
 import com.clinicaodontologica.backend.dto.response.cita.ConfirmacionCreacionCitaPAcienteDTO;
 import com.clinicaodontologica.backend.dto.response.cita.ConsultarCitasLibresOdontologoPacientePublicDTO;
 import com.clinicaodontologica.backend.dto.response.cita.ConsultarCitasOdontologoConfidentialResponseDTO;
+import com.clinicaodontologica.backend.dto.response.cita.ListarOdontologosDTO;
 import com.clinicaodontologica.backend.model.Cita;
 import com.clinicaodontologica.backend.model.Usuario;
 import com.clinicaodontologica.backend.repository.CitaRepository;
@@ -27,12 +29,12 @@ public class CitaService {
         this.passwordEncoder = passwordEncoder;
     }
     // agrego la sesion como uno de los parametros que necesita para crear la cita
-    public ConfirmacionCreacionCitaPAcienteDTO crearcita (Cita citaqueintentancrear,Long pacienteIdsesion)throws Exception{
+    public ConfirmacionCreacionCitaPAcienteDTO crearcita (Cita citaqueintentancrear,Long pacienteIdsesion){// la excepcion ahora se maneja con la carpeta exception{
         // busco al paciente en la bdd usando el id seguro
         Optional<Usuario> usuariologueado = usuarioRepository.findById(pacienteIdsesion);
         //verifico si existe
         if(usuariologueado.isEmpty()){
-            throw new Exception("usuario no encontrado");
+            throw new RuntimeException("usuario no encontrado");
         }
         // si pasa el if ya sabemos que no esta vacio entonces lo convertimos en usuario para acceder al rol
         Usuario usuarioLogueadomodousuario = usuariologueado.get();
@@ -44,12 +46,12 @@ public class CitaService {
         } else if (usuarioLogueadomodousuario.getRol().equalsIgnoreCase("ODONTOLOGO") || usuarioLogueadomodousuario.getRol().equals("ADMIN")) {
             // si el rol es odontologo o admun se permite que se traiga el id del paciente al que se le va a agendar la cita
             if (citaqueintentancrear.getPaciente() == null || citaqueintentancrear.getPaciente().getId() == null) {
-                throw new Exception("Debe especificar el id del paciente para esta cita");
+                throw new RuntimeException("Debe especificar el id del paciente para esta cita");
             }
             Optional<Usuario> pacienteOPTDelJson = usuarioRepository.findById(citaqueintentancrear.getPaciente().getId());
             // checamos si el optional esta vacio
             if (pacienteOPTDelJson.isEmpty()) {
-                throw new Exception("El paciente indicado no existe en la bdd");
+                throw new RuntimeException("El paciente indicado no existe en la bdd");
             }
             // si pasa el if lo saco de optional y se lo pongo a un usuaario
             Usuario pacienteDelJson = pacienteOPTDelJson.get();
@@ -74,6 +76,21 @@ public class CitaService {
 
             // la logica anterior pedia email y contrasena para validar la creacion de una cita  ahora se usa el sesion id y el rol
 
+    }
+    //logica del endpoint para devolver citas agendadas del paciente
+    public List<ConsultarcitasagendadaspacienteDTO>consultarcitaspropiaspaciente (Long id){
+        List<Cita> citasexpuestas = citaRepository.findCitasByPaciente_Id(id);
+        List<ConsultarcitasagendadaspacienteDTO> citaslimpias = new ArrayList<>();
+        for (Cita iteracioncitaexpuesta : citasexpuestas){
+            ConsultarcitasagendadaspacienteDTO citalimpiauxiliar = new ConsultarcitasagendadaspacienteDTO();
+            citalimpiauxiliar.setOdontologo(iteracioncitaexpuesta.getOdontologo().getNombres()+" "+ iteracioncitaexpuesta.getOdontologo().getApellidos());
+            citalimpiauxiliar.setHora(iteracioncitaexpuesta.getHora());
+            citalimpiauxiliar.setId(iteracioncitaexpuesta.getId());
+            citalimpiauxiliar.setFecha(iteracioncitaexpuesta.getFecha());
+            citalimpiauxiliar.setEstado(iteracioncitaexpuesta.getEstado());
+            citaslimpias.add(citalimpiauxiliar);
+        }
+        return citaslimpias;
     }
 
 
@@ -139,6 +156,23 @@ public class CitaService {
 
         //retornamos la lista sin exposicion de informacion sensible
         return listaDTOs;
+    }
+
+
+    public List<ListarOdontologosDTO>listarodontologos(){
+        List<ListarOdontologosDTO> listaodontologoslimipia = new ArrayList<>();
+        String rol = "ODONTOLOGO";
+        List<Usuario> listaodontologos = usuarioRepository.findByRolIgnoreCase(rol);
+        if(listaodontologos.isEmpty()){
+            throw new RuntimeException("No hay odontologos");
+        }
+        for (Usuario iteracionusuario : listaodontologos){
+            ListarOdontologosDTO odontologoidynombre = new ListarOdontologosDTO();
+            odontologoidynombre.setId(iteracionusuario.getId());
+            odontologoidynombre.setNombres(iteracionusuario.getNombres()+" "+ iteracionusuario.getApellidos());
+            listaodontologoslimipia.add(odontologoidynombre);
+        }
+        return listaodontologoslimipia;
     }
 
 }

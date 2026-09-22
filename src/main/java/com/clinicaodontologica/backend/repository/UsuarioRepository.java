@@ -7,6 +7,7 @@ package com.clinicaodontologica.backend.repository;
 import com.clinicaodontologica.backend.model.Usuario;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.util.List;
 import java.util.Optional;
 // Debe extender de Jparepository ya que de aqui heredara el comportamiento
 // Spring data JPA lee automaticamente <la entidad (la tabla) con la que va a trabajar el repositorio. y el tipo
@@ -29,4 +30,5 @@ public interface UsuarioRepository extends JpaRepository<Usuario,Long> {
 
     Optional<Usuario> findByCedula(String cedula);
 
+    List<Usuario>findByRolIgnoreCase(String rol);
 }

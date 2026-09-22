@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clínica Odontológica</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .schedule-card {
+            max-width: 650px;
+            margin: 20px auto;
+            background: #ffffff;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        .slots-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+            gap: 12px;
+            margin-top: 15px;
+        }
+        .slot-item {
+            padding: 12px;
+            text-align: center;
+            border-radius: 8px;
+            font-weight: 500;
+            font-size: 14px;
+        }
+        .slot-busy {
+            background-color: #ffebee;
+            color: #c62828;
+            border: 1px solid #ef9a9a;
+        }
+        .slot-free {
+            background-color: #e8f5e9;
+            color: #2e7d32;
+            border: 1px solid #a5d6a7;
+        }
+        .odontologo-badge {
+            font-size: 15px;
+            color: #2c3e50;
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+            border-left: 4px solid #3498db;
+        }
+        .form-control-select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 14px;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="auth-container">
+    <!-- TARJETA DE LOGIN Y REGISTRO -->
+    <div class="auth-card">
+        <h1>Clínica Odontológica</h1>
+        <p class="subtitle">Accede o crea tu cuenta</p>
+
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab('login')">Iniciar sesión</button>
+            <button class="tab" onclick="switchTab('register')">Registrarse</button>
+        </div>
+
+        <div id="alert" class="alert" style="display: none;"></div>
+
+        <!-- LOGIN -->
+        <form id="loginForm" class="form active" onsubmit="handleLogin(event)">
+            <div class="form-group">
+                <label>Email</label>
+                <input type="email" id="loginEmail" required placeholder="tu@email.com">
+            </div>
+            <div class="form-group">
+                <label>Contraseña</label>
+                <input type="password" id="loginPassword" required placeholder="••••••••">
+            </div>
+            <button type="submit" class="btn btn-primary">Entrar</button>
+        </form>
+
+        <!-- REGISTER -->
+        <form id="registerForm" class="form" onsubmit="handleRegister(event)">
+            <div class="form-group">
+                <label>Cédula</label>
+                <input type="text" id="regCedula" required>
+            </div>
+            <div class="form-group">
+                <label>Nombres</label>
+                <input type="text" id="regNombres" required>
+            </div>
+            <div class="form-group">
+                <label>Apellidos</label>
+                <input type="text" id="regApellidos" required>
+            </div>
+            <div class="form-group">
+                <label>Email</label>
+                <input type="email" id="regEmail" required>
+            </div>
+            <div class="form-group">
+                <label>Contraseña</label>
+                <input type="password" id="regPassword" required minlength="6">
+            </div>
+            <button type="submit" class="btn btn-primary">Crear cuenta</button>
+        </form>
+    </div>
+
+    <!-- SECCIÓN PÚBLICA DE DISPONIBILIDAD DE CITAS -->
+    <div class="auth-card schedule-card">
+        <h2> Disponibilidad de Horarios</h2>
+        <p class="subtitle">Consulta las citas disponibles en tiempo real</p>
+
+        <!-- NUEVO SELECTOR DINÁMICO DE ODONTÓLOGOS -->
+        <div class="form-group">
+            <label>Selecciona un Odontólogo:</label>
+            <select id="selectOdontologo" class="form-control-select" onchange="verificarDisponibilidad()">
+                <option value="">Cargando odontólogos...</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label>Selecciona una Fecha:</label>
+            <input type="date" id="consultDate" class="form-control" onchange="verificarDisponibilidad()">
+        </div>
+
+        <div id="odontologoInfo" class="odontologo-badge">
+            Cargando información del odontólogo...
+        </div>
+
+        <h3>Horarios de Atención</h3>
+        <div id="slotsContainer" class="slots-grid">
+            <p style="color: #666; grid-column: 1 / -1; text-align: center;">Selecciona una fecha y un odontólogo para ver los horarios.</p>
+        </div>
+        <div style="margin-top: 30px; margin-bottom: 20px;">
+            <p style="margin-bottom: 20px;">Inicia sesion o Registrate para Crear una Cita</p>
+        </div>
+    </div>
+</div>
+
+<script>
+    const API = 'http://localhost:8080';
+
+    // Cargar la lista de odontólogos y la fecha actual al abrir la página
+    document.addEventListener('DOMContentLoaded', async () => {
+        const today = new Date().toISOString().split('T')[0];
+        const dateInput = document.getElementById('consultDate');
+        if(dateInput) {
+            dateInput.value = today;
+        }
+
+        await cargarOdontologos();
+    });
+
+    // Función para obtener los odontólogos del endpoint GET
+    async function cargarOdontologos() {
+        const select = document.getElementById('selectOdontologo');
+        try {
+            const res = await fetch(`${API}/citas/listarodontologos`);
+            if (!res.ok) throw new Error('Error al cargar odontólogos');
+
+            const odontologos = await res.json();
+            select.innerHTML = '';
+
+            if (odontologos.length === 0) {
+                select.innerHTML = '<option value="">No hay odontólogos registrados</option>';
+                return;
+            }
+
+            // Llenar el select dinámicamente
+            odontologos.forEach(odonto => {
+                const option = document.createElement('option');
+                // Asumiendo que el objeto devuelto tiene campos como id, nombres, apellidos o nombreCompleto
+                // Ajusta las propiedades si tu objeto JSON usa nombres distintos (ej. odonto.nombres)
+                const nombreCompleto = odonto.nombreCompleto || `${odonto.nombres || ''} ${odonto.apellidos || ''}`.trim() || `Odontólogo ID: ${odonto.id}`;
+
+                option.value = odonto.id;
+                option.textContent = nombreCompleto;
+                select.appendChild(option);
+            });
+
+            // Una vez cargados, verificamos disponibilidad con el primero por defecto
+            verificarDisponibilidad();
+
+        } catch (err) {
+            console.error(err);
+            select.innerHTML = '<option value="">Error al cargar odontólogos</option>';
+        }
+    }
+
+    function switchTab(tab) {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.form').forEach(f => f.classList.remove('active'));
+
+        if (tab === 'login') {
+            document.querySelectorAll('.tab')[0].classList.add('active');
+            document.getElementById('loginForm').classList.add('active');
+        } else {
+            document.querySelectorAll('.tab')[1].classList.add('active');
+            document.getElementById('registerForm').classList.add('active');
+        }
+        hideAlert();
+    }
+
+    function showAlert(msg, type = 'error') {
+        const el = document.getElementById('alert');
+        el.textContent = msg;
+        el.className = `alert ${type}`;
+        el.style.display = 'block';
+    }
+
+    function hideAlert() {
+        document.getElementById('alert').style.display = 'none';
+    }
+
+    // Consulta automática usando el ID del select seleccionado
+    async function verificarDisponibilidad() {
+        const fecha = document.getElementById('consultDate').value;
+        const selectOdonto = document.getElementById('selectOdontologo');
+        const odontologoId = selectOdonto.value;
+        const slotsContainer = document.getElementById('slotsContainer');
+        const infoContainer = document.getElementById('odontologoInfo');
+
+        if (!fecha || !odontologoId) return;
+
+        // Horas laborales estándar de la clínica
+        const horasLaborales = [
+            "09:00:00", "10:00:00", "11:00:00",
+            "12:00:00", "14:00:00", "15:00:00", "16:00:00"
+        ];
+
+        slotsContainer.innerHTML = '<p style="color: #666; grid-column: 1 / -1; text-align: center;">Consultando disponibilidad...</p>';
+        infoContainer.innerHTML = 'Consultando odontólogo...';
+
+        try {
+            const res = await fetch(`${API}/citas/paciente/consultarcita`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    odontologo: { id: parseInt(odontologoId) },
+                    fecha: fecha
+                })
+            });
+
+            if (!res.ok) throw new Error('Error al consultar las citas');
+
+            const citasOcupadas = await res.json();
+
+            // Creamos un Set con las horas que ya tienen cita registrada
+            const horasOcupadasSet = new Set(citasOcupadas.map(c => c.hora));
+
+            // Extraer el nombre concatenado del odontólogo de la respuesta o del select
+            const nombreSeleccionado = selectOdonto.options[selectOdonto.selectedIndex].text;
+            if (citasOcupadas.length > 0 && citasOcupadas[0].nombreOdontologo) {
+                infoContainer.innerHTML = `<strong>Odontólogo:</strong> ${citasOcupadas[0].nombreOdontologo}`;
+            } else {
+                infoContainer.innerHTML = `<strong>Odontólogo:</strong> ${nombreSeleccionado} (Sin citas ocupadas para esta fecha)`;
+            }
+
+            slotsContainer.innerHTML = '';
+
+            // Renderizar los slots de horas
+            horasLaborales.forEach(hora => {
+                const slot = document.createElement('div');
+                const estaOcupada = horasOcupadasSet.has(hora);
+                const horaFormateada = hora.substring(0, 5); // Formato HH:MM
+
+                if (estaOcupada) {
+                    slot.className = 'slot-item slot-busy';
+                    slot.innerHTML = ` ${horaFormateada} <br><span style="font-size: 11px; font-weight: bold;">Ocupada</span>`;
+                } else {
+                    slot.className = 'slot-item slot-free';
+                    slot.innerHTML = ` ${horaFormateada} <br><span style="font-size: 11px; font-weight: bold;">Disponible</span>`;
+                }
+
+                slotsContainer.appendChild(slot);
+            });
+
+        } catch (err) {
+            console.error(err);
+            slotsContainer.innerHTML = '<p style="color: red; grid-column: 1 / -1; text-align: center;">No se pudo conectar con el servidor.</p>';
+            infoContainer.innerHTML = `<strong style="color: red;">Error al conectar con la API</strong>`;
+        }
+    }
+
+    async function handleLogin(e) {
+        e.preventDefault();
+        hideAlert();
+        const email = document.getElementById('loginEmail').value;
+        const password = document.getElementById('loginPassword').value;
+
+        try {
+            const res = await fetch(`${API}/api/auth/login`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({ email, password })
+            });
+
+            const data = await res.json();
+
+            if (!res.ok) {
+                showAlert(data.error || 'Error al iniciar sesión');
+                return;
+            }
+
+            localStorage.setItem('usuario', JSON.stringify(data));
+
+            if (data.rol === 'ODONTOLOGO' || data.rol === 'ADMIN') {
+                window.location.href = 'odontologo.html';
+            } else {
+                window.location.href = 'dashboard.html';
+            }
+        } catch (err) {
+            showAlert('No se pudo conectar con el servidor');
+        }
+    }
+
+    async function handleRegister(e) {
+        e.preventDefault();
+        hideAlert();
+
+        const body = {
+            cedula: document.getElementById('regCedula').value,
+            nombres: document.getElementById('regNombres').value,
+            apellidos: document.getElementById('regApellidos').value,
+            email: document.getElementById('regEmail').value,
+            contrasena: document.getElementById('regPassword').value
+        };
+
+        try {
+            const res = await fetch(`${API}/api/auth/register`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body)
+            });
+
+            const data = await res.json();
+
+            if (!res.ok) {
+                showAlert(data.error || 'Error al registrarse');
+                return;
+            }
+
+            showAlert('¡Cuenta creada! Ahora puedes iniciar sesión', 'success');
+            setTimeout(() => switchTab('login'), 1500);
+        } catch (err) {
+            showAlert('No se pudo conectar con el servidor');
+        }
+    }
+</script>
+</body>
+</html>

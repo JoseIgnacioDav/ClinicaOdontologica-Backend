@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Paciente - Clínica Odontológica</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f7f6;
+            margin: 0;
+            padding: 20px;
+        }
+        .dashboard-container {
+            max-width: 750px;
+            margin: 0 auto;
+        }
+        .header-card {
+            background: #ffffff;
+            padding: 20px 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .schedule-card {
+            background: #ffffff;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            margin-bottom: 20px;
+        }
+        .slots-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+            gap: 12px;
+            margin-top: 15px;
+        }
+        .slot-item {
+            padding: 12px;
+            text-align: center;
+            border-radius: 8px;
+            font-weight: 500;
+            font-size: 14px;
+            transition: all 0.2s ease;
+        }
+        .slot-busy {
+            background-color: #ffebee;
+            color: #c62828;
+            border: 1px solid #ef9a9a;
+            cursor: not-allowed;
+        }
+        .slot-free {
+            background-color: #e8f5e9;
+            color: #2e7d32;
+            border: 1px solid #a5d6a7;
+            cursor: pointer;
+        }
+        .slot-free:hover {
+            background-color: #c8e6c9;
+            transform: translateY(-2px);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .odontologo-badge {
+            font-size: 15px;
+            color: #2c3e50;
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+            border-left: 4px solid #3498db;
+        }
+        .form-control-select, .form-control {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 14px;
+            margin-top: 5px;
+            box-sizing: border-box;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .alert {
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+            font-size: 14px;
+        }
+        .alert.error { background-color: #ffebee; color: #c62828; border: 1px solid #ef9a9a; }
+        .alert.success { background-color: #e8f5e9; color: #2e7d32; border: 1px solid #a5d6a7; }
+        .btn-logout {
+            background-color: #e74c3c;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        .btn-logout:hover { background-color: #c0392b; }
+        .confirmation-box {
+            background: #e3f2fd;
+            border: 1px solid #90caf9;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+            color: #0d47a1;
+        }
+    </style>
+</head>
+<body>
+
+<div class="dashboard-container">
+    <!-- CABECERA CON BIENVENIDA Y LOGOUT -->
+    <div class="header-card">
+        <div>
+            <h2 style="margin: 0; color: #2c3e50;">Panel de Paciente</h2>
+            <p id="welcomeUser" style="margin: 5px 0 0 0; color: #7f8c8d; font-size: 14px;">Bienvenido</p>
+        </div>
+        <button class="btn-logout" onclick="cerrarSesion()">Cerrar Sesión</button>
+    </div>
+
+    <div id="alert" class="alert" style="display: none;"></div>
+
+    <!-- NUEVA SECCIÓN: MIS CITAS AGENDADAS -->
+    <div class="schedule-card">
+        <h2>📋 Mis Citas Agendadas</h2>
+        <p class="subtitle" style="color: #666; font-size: 14px;">Consulta el estado actual de tus citas programadas.</p>
+        <div id="misCitasContainer">
+            <p style="color: #666; text-align: center;">Cargando tus citas...</p>
+        </div>
+    </div>
+
+    <!-- SECCIÓN DE RESERVA DE CITAS -->
+    <div class="schedule-card">
+        <h2>📅 Reservar Cita Odontológica</h2>
+        <p class="subtitle" style="color: #666; font-size: 14px;">Selecciona un odontólogo, una fecha y haz clic en un horario disponible para apartar tu cita.</p>
+
+        <!-- SELECTOR DINÁMICO DE ODONTÓLOGOS -->
+        <div class="form-group">
+            <label><strong>Selecciona un Odontólogo:</strong></label>
+            <select id="selectOdontologo" class="form-control-select" onchange="verificarDisponibilidad()">
+                <option value="">Cargando odontólogos...</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label><strong>Selecciona una Fecha:</strong></label>
+            <input type="date" id="consultDate" class="form-control" onchange="verificarDisponibilidad()">
+        </div>
+
+        <div id="odontologoInfo" class="odontologo-badge">
+            Cargando información del odontólogo...
+        </div>
+
+        <h3>Horarios Disponibles</h3>
+        <p style="font-size: 12px; color: #e67e22; margin-bottom: 10px;">💡 Tip: Los bloques verdes están libres. Haz clic en uno para confirmar tu reserva instantáneamente.</p>
+
+        <div id="slotsContainer" class="slots-grid">
+            <p style="color: #666; grid-column: 1 / -1; text-align: center;">Selecciona una fecha y un odontólogo para ver los horarios.</p>
+        </div>
+
+        <div id="resultadoCreacion"></div>
+    </div>
+</div>
+
+<script>
+    const API = 'http://localhost:8080';
+
+    document.addEventListener('DOMContentLoaded', async () => {
+        const usuarioGuardado = localStorage.getItem('usuario');
+        if (usuarioGuardado) {
+            const userObj = JSON.parse(usuarioGuardado);
+            document.getElementById('welcomeUser').textContent = `Bienvenido, ${userObj.nombres || userObj.email || 'Paciente'}`;
+        }
+
+        const today = new Date().toISOString().split('T')[0];
+        const dateInput = document.getElementById('consultDate');
+        if(dateInput) {
+            dateInput.value = today;
+        }
+
+        // Cargamos las citas del paciente y los odontólogos al iniciar
+        await cargarMisCitas();
+        await cargarOdontologos();
+    });
+
+    // Función auxiliar para transformar fechas tipo "2026-12-24" a "24 de diciembre de 2026"
+    function formatearFechaBonita(fechaStr) {
+        if (!fechaStr) return '';
+        const partes = fechaStr.split('-');
+        if (partes.length !== 3) return fechaStr; // Fallback por seguridad
+
+        const anio = parseInt(partes[0], 10);
+        const mes = parseInt(partes[1], 10) - 1; // Meses en JS van de 0 a 11
+        const dia = parseInt(partes[2], 10);
+
+        const fechaObj = new Date(anio, mes, dia);
+        return fechaObj.toLocaleDateString('es-ES', {
+            day: 'numeric',
+            month: 'long',
+            year: 'numeric'
+        });
+    }
+
+    // Nueva función para consumir tu endpoint POST /citas/citaspaciente
+    async function cargarMisCitas() {
+        const contenedor = document.getElementById('misCitasContainer');
+        try {
+            const res = await fetch(`${API}/citas/citaspaciente`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({})
+            });
+
+            if (!res.ok) throw new Error('Error al cargar tus citas');
+
+            const citas = await res.json();
+            contenedor.innerHTML = '';
+
+            if (citas.length === 0) {
+                contenedor.innerHTML = '<p style="color: #666; text-align: center; margin: 15px 0;">No tienes citas agendadas por el momento.</p>';
+                return;
+            }
+
+            // Renderizar cada cita con el formato bonito de tarjeta
+            citas.forEach(cita => {
+                const fechaFormateada = formatearFechaBonita(cita.fecha);
+                const horaCorta = cita.hora ? cita.hora.substring(0, 5) : '';
+
+                const box = document.createElement('div');
+                box.className = 'confirmation-box';
+                box.style.marginTop = '15px';
+                box.innerHTML = `
+                    <h3 style="margin-top: 0; color: #1565c0;">📅 Cita Agendada #${cita.id}</h3>
+                    <p><strong>Fecha y Hora:</strong> ${fechaFormateada} a las ${horaCorta}</p>
+                    <p><strong>Odontólogo:</strong> ${cita.odontologo || 'Asignado'}</p>
+                    <p><strong>Estado:</strong> <span style="color: #2e7d32; font-weight: bold;">${cita.estado}</span></p>
+                `;
+                contenedor.appendChild(box);
+            });
+
+        } catch (err) {
+            console.error(err);
+            contenedor.innerHTML = '<p style="color: red; text-align: center;">No se pudieron cargar tus citas agendadas.</p>';
+        }
+    }
+
+    async function cargarOdontologos() {
+        const select = document.getElementById('selectOdontologo');
+        try {
+            const res = await fetch(`${API}/citas/listarodontologos`, { credentials: 'include' });
+            if (!res.ok) throw new Error('Error al cargar odontólogos');
+
+            const odontologos = await res.json();
+            select.innerHTML = '';
+
+            if (odontologos.length === 0) {
+                select.innerHTML = '<option value="">No hay odontólogos registrados</option>';
+                return;
+            }
+
+            odontologos.forEach(odonto => {
+                const option = document.createElement('option');
+                const nombreCompleto = odonto.nombreCompleto || `${odonto.nombres || ''} ${odonto.apellidos || ''}`.trim() || `Odontólogo ID: ${odonto.id}`;
+
+                option.value = odonto.id;
+                option.textContent = nombreCompleto;
+                select.appendChild(option);
+            });
+
+            verificarDisponibilidad();
+
+        } catch (err) {
+            console.error(err);
+            select.innerHTML = '<option value="">Error al cargar odontólogos</option>';
+        }
+    }
+
+    function showAlert(msg, type = 'error') {
+        const el = document.getElementById('alert');
+        el.textContent = msg;
+        el.className = `alert ${type}`;
+        el.style.display = 'block';
+    }
+
+    function hideAlert() {
+        document.getElementById('alert').style.display = 'none';
+    }
+
+    async function verificarDisponibilidad() {
+        const fecha = document.getElementById('consultDate').value;
+        const selectOdonto = document.getElementById('selectOdontologo');
+        const odontologoId = selectOdonto.value;
+        const slotsContainer = document.getElementById('slotsContainer');
+        const infoContainer = document.getElementById('odontologoInfo');
+
+        if (!fecha || !odontologoId) return;
+
+        const horasLaborales = [
+            "09:00:00", "10:00:00", "11:00:00",
+            "12:00:00", "14:00:00", "15:00:00", "16:00:00"
+        ];
+
+        slotsContainer.innerHTML = '<p style="color: #666; grid-column: 1 / -1; text-align: center;">Consultando disponibilidad...</p>';
+        infoContainer.innerHTML = 'Consultando odontólogo...';
+
+        try {
+            const res = await fetch(`${API}/citas/paciente/consultarcita`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({
+                    odontologo: { id: parseInt(odontologoId) },
+                    fecha: fecha
+                })
+            });
+
+            if (!res.ok) throw new Error('Error al consultar las citas');
+
+            const citasOcupadas = await res.json();
+            const horasOcupadasSet = new Set(citasOcupadas.map(c => c.hora));
+
+            const nombreSeleccionado = selectOdonto.options[selectOdonto.selectedIndex].text;
+            if (citasOcupadas.length > 0 && citasOcupadas[0].nombreOdontologo) {
+                infoContainer.innerHTML = `<strong>Odontólogo:</strong> ${citasOcupadas[0].nombreOdontologo}`;
+            } else {
+                infoContainer.innerHTML = `<strong>Odontólogo:</strong> ${nombreSeleccionado} (Sin citas ocupadas para esta fecha)`;
+            }
+
+            slotsContainer.innerHTML = '';
+
+            horasLaborales.forEach(hora => {
+                const slot = document.createElement('div');
+                const estaOcupada = horasOcupadasSet.has(hora);
+                const horaFormateada = hora.substring(0, 5); // Formato HH:MM
+
+                if (estaOcupada) {
+                    slot.className = 'slot-item slot-busy';
+                    slot.innerHTML = `❌ ${horaFormateada} <br><span style="font-size: 11px; font-weight: bold;">Ocupada</span>`;
+                } else {
+                    slot.className = 'slot-item slot-free';
+                    slot.innerHTML = `✅ ${horaFormateada} <br><span style="font-size: 11px; font-weight: bold;">Reservar</span>`;
+                    slot.onclick = () => solicitarCita(fecha, hora, odontologoId);
+                }
+
+                slotsContainer.appendChild(slot);
+            });
+
+        } catch (err) {
+            console.error(err);
+            slotsContainer.innerHTML = '<p style="color: red; grid-column: 1 / -1; text-align: center;">No se pudo conectar con el servidor.</p>';
+            infoContainer.innerHTML = `<strong style="color: red;">Error al conectar con la API</strong>`;
+        }
+    }
+
+    async function solicitarCita(fecha, hora, odontologoId) {
+        hideAlert();
+        const resultadoDiv = document.getElementById('resultadoCreacion');
+
+        const fechaLegible = formatearFechaBonita(fecha);
+        const horaCorta = hora.substring(0, 5);
+
+        if (!confirm(`¿Deseas confirmar tu cita para el ${fechaLegible} a las ${horaCorta}?`)) {
+            return;
+        }
+
+        try {
+            const res = await fetch(`${API}/citas/crearcita`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({
+                    fecha: fecha,
+                    hora: hora,
+                    odontologo: {
+                        id: parseInt(odontologoId)
+                    }
+                })
+            });
+
+            const data = await res.json();
+
+            if (!res.ok) {
+                showAlert(data.error || 'No se pudo crear la cita');
+                return;
+            }
+
+            const fechaRespuestaFormateada = formatearFechaBonita(data.fecha);
+
+            resultadoDiv.innerHTML = `
+                <div class="confirmation-box">
+                    <h3 style="margin-top: 0; color: #1565c0;">🎉 ¡Cita Creada con Éxito!</h3>
+                    <p><strong>ID de Cita:</strong> #${data.id}</p>
+                    <p><strong>Fecha y Hora:</strong> ${fechaRespuestaFormateada} a las ${data.hora.substring(0, 5)}</p>
+                    <p><strong>Odontólogo:</strong> ${data.nombreodontologo || 'Asignado'}</p>
+                    <p><strong>Paciente:</strong> ${data.nombrepaciente || 'Registrado'}</p>
+                    <p><strong>Estado:</strong> <span style="color: #2e7d32; font-weight: bold;">${data.estado}</span></p>
+                </div>
+            `;
+
+            // Refrescamos los bloques horarios de disponibilidad y recargamos la lista de "Mis Citas"
+            verificarDisponibilidad();
+            cargarMisCitas();
+
+        } catch (err) {
+            console.error(err);
+            showAlert('Error de conexión al intentar agendar la cita');
+        }
+    }
+
+    function cerrarSesion() {
+        localStorage.removeItem('usuario');
+        window.location.href = 'index.html';
+    }
+</script>
+</body>
+</html>

@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel Odontólogo</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<nav class="navbar">
+    <div class="logo"> Panel Odontólogo</div>
+    <div class="user-info">
+        <span class="user-name" id="userName"></span>
+        <button class="btn btn-secondary" onclick="logout()">Cerrar sesión</button>
+    </div>
+</nav>
+
+<main class="main">
+    <h1 class="page-title">Mis citas</h1>
+    <p class="page-subtitle">Consulta las citas asignadas</p>
+
+    <div class="card">
+        <div class="form-row" style="margin-bottom: 1.5rem;">
+            <div class="form-group">
+                <label>Fecha</label>
+                <input type="date" id="fechaConsulta">
+            </div>
+            <div class="form-group" style="display: flex; align-items: flex-end;">
+                <button class="btn btn-primary" onclick="consultarCitas()" style="width: 100%;">
+                    Buscar citas
+                </button>
+            </div>
+        </div>
+
+        <div id="listaCitas">
+            <div class="empty-state">
+                <p>Selecciona una fecha para ver las citas</p>
+            </div>
+        </div>
+    </div>
+</main>
+
+<script>
+    const API = 'http://localhost:8080';
+
+    const usuario = JSON.parse(localStorage.getItem('usuario') || 'null');
+    if (!usuario || (usuario.rol !== 'ODONTOLOGO' && usuario.rol !== 'ADMIN')) {
+        window.location.href = 'index.html';
+    } else {
+        document.getElementById('userName').textContent = `${usuario.nombres} (${usuario.rol})`;
+    }
+
+    // Fecha de hoy por defecto
+    document.getElementById('fechaConsulta').valueAsDate = new Date();
+
+    function logout() {
+        localStorage.removeItem('usuario');
+        window.location.href = 'index.html';
+    }
+
+    async function consultarCitas() {
+        const fecha = document.getElementById('fechaConsulta').value;
+        const lista = document.getElementById('listaCitas');
+
+        if (!fecha) {
+            lista.innerHTML = '<div class="empty-state"><p>Selecciona una fecha</p></div>';
+            return;
+        }
+
+        lista.innerHTML = '<div class="empty-state"><p>Cargando...</p></div>';
+
+        try {
+            const res = await fetch(`${API}/citas/odontologo/consultarcita`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({
+                    odontologo: { id: usuario.id },
+                    fecha: fecha
+                })
+            });
+
+            const data = await res.json();
+
+            if (!res.ok) {
+                lista.innerHTML = `<div class="empty-state"><p>${data.error || data.Error || 'Error'}</p></div>`;
+                return;
+            }
+
+            if (!data || data.length === 0) {
+                lista.innerHTML = '<div class="empty-state"><p>No hay citas para esta fecha</p></div>';
+                return;
+            }
+
+            lista.innerHTML = data.map(cita => `
+                    <div class="cita-item">
+                        <div class="cita-info">
+                            <strong>${cita.hora} – ${cita.nombrePaciente}</strong>
+                            <span>Cédula: ${cita.cedulapaciente || '—'} · ${cita.emailpaciente || ''}</span>
+                        </div>
+                        <span class="badge badge-pendiente">${cita.estado}</span>
+                    </div>
+                `).join('');
+        } catch (err) {
+            lista.innerHTML = '<div class="empty-state"><p>Error de conexión</p></div>';
+        }
+    }
+
+    // Cargar automáticamente al abrir
+    consultarCitas();
+</script>
+</body>
+</html>

@@ -6,14 +6,15 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
+import java.util.List;
 
 @Configuration // esta anotacion le dice a spring que esta clase contiene configuaciones globales del sistema
 public class SecurityConfig {
-    /*Un Bean en Spring no es más que un objeto de Java que es creado, configurado y administrado por el propio Spring Boot.
-Para entenderlo fácil con una analogía:
-Imagina que Spring es el gerente de una bodega gigante de herramientas.
-En el Java tradicional, si necesitas una herramienta (como el encriptador de contraseñas), te toca ir a fabricarla tú mismo cada vez escribiendo new BCryptPasswordEncoder().
-Con un Bean, tú le dices a Spring: "Oye, fabrica una sola vez esta herramienta, guárdala en tu bodega, y cuando cualquier otra parte de mi código la necesite, simplemente dásela".*/
+
     @Bean
     public PasswordEncoder passwordEncoder (){
         return new BCryptPasswordEncoder(); // Esta es la herramienta matemática oficial de BCrypt
@@ -31,17 +32,39 @@ Con un Bean, tú le dices a Spring: "Oye, fabrica una sola vez esta herramienta,
         // 2. Configuramos las reglas de acceso por URL //  .authorizeHttpRequests(auth -> auth
         // Permitimos el acceso libre y sin restricciones a los endpoints de registro y login .requestMatchers("/api/auth/register", "/api/auth/login").permitAll()
         //// Cualquier otra petición que llegue al sistema exigirá que el usuario esté autenticado .anyRequest().authenticated()
-        http.csrf(csrf ->csrf.disable()).
-                authorizeHttpRequests(auth -> auth // quito a "/citas/** de los endpoints publicos
-                        .requestMatchers("/api/auth/register", "/api/auth/login", "/citas/**")
+        http
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                .csrf(csrf -> csrf.disable())
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(
+                                "/api/auth/register",
+                                "/api/auth/login",
+                                "/citas/**",
+                                "/*.html",
+                                "/*.css",
+                                "/js/**",
+                                "/"
+                        )
                         .permitAll()
                         .anyRequest()
-                        .authenticated()
-                ).formLogin(form -> form.disable())// desactivamos el form de html por defecto
+                        .permitAll()
+                )
+                .formLogin(form -> form.disable())// desactivamos el form de html por defecto
                 .httpBasic(basic -> basic.disable());
         return http.build();
 
+    }
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration configuration = new CorsConfiguration();
+        configuration.setAllowedOrigins(List.of("http://localhost:8080", "http://127.0.0.1:8080"));
+        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        configuration.setAllowedHeaders(List.of("Authorization", "Cache-Control", "Content-Type"));
+        configuration.setAllowCredentials(true); // Vital para que las cookies de HttpSession fluyan de forma correcta
 
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", configuration);
+        return source;
     }
 
 }

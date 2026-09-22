@@ -1,6 +1,6 @@
 package com.clinicaodontologica.backend.controller;
 
-import com.clinicaodontologica.backend.dto.request.ConsultaCitaRequestDTO;
+import com.clinicaodontologica.backend.dto.request.cita.ConsultaCitaRequestDTO;
 import com.clinicaodontologica.backend.dto.response.cita.ConfirmacionCreacionCitaPAcienteDTO;
 import com.clinicaodontologica.backend.dto.response.usuario.RespuestaAlLoguaarseDTO;
 import com.clinicaodontologica.backend.model.Cita;
@@ -9,10 +9,7 @@ import com.clinicaodontologica.backend.service.CitaService;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 
@@ -74,9 +71,26 @@ public class CitaController {
        return ResponseEntity.ok(citaService.versionpaciente(request.getOdontologo(),request.getFecha())); // aqui en vez de meter odontologo y fecha como parametro en la funcion mete lo que pasa por el request para tener el odontologo y la fecha dentro del body usando ese dto
     }
 
+    @GetMapping("/listarodontologos")
+    public ResponseEntity<?>litarodontologos(){
+        return ResponseEntity.ok(citaService.listarodontologos());
+    }
 
+    @PostMapping("/citaspaciente")
+    public ResponseEntity<?> citaspaciente(HttpSession session) {
+        // 1. Verificamos la sesión activa
+        RespuestaAlLoguaarseDTO usuarioSession = (RespuestaAlLoguaarseDTO) session.getAttribute("usuarioLogueado");
+        if(usuarioSession == null){
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "No hay sesión activa"));
+        }
 
+        // 2. Validamos que el rol sea PACIENTE (siguiendo tu línea de blindaje por rol)
+        if(!usuarioSession.getRol().equalsIgnoreCase("PACIENTE") && !usuarioSession.getRol().equalsIgnoreCase("ADMIN")){
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "Acceso Restringido"));
+        }
 
-
+        // 3. Obtenemos las citas usando el ID del paciente logueado en la sesión
+        return ResponseEntity.ok(citaService.consultarcitaspropiaspaciente(usuarioSession.getId()));
+    }
 
 }

@@ -32,14 +32,14 @@ public class UsuarioService {
         this.passwordEncoder = passwordEncoder;
     }
 
-    public RespuestaAlcrearUsuarioDTO registrarUsuario(Usuario usuariorecibido) throws Exception {
+    public RespuestaAlcrearUsuarioDTO registrarUsuario(Usuario usuariorecibido)  {// ahora las excepciones se manejan en la carpeta exception
 
         // busco el correo y la cedula que recibo del usuariorecibido  en la bdd
         Optional usuariollamadobddcdla = usuarioRepository.findByCedula(usuariorecibido.getCedula());
         Optional usuariollamadobddemail = usuarioRepository.findByEmail(usuariorecibido.getEmail());
 
         if(usuariollamadobddemail.isPresent() || usuariollamadobddcdla.isPresent()){
-            throw new Exception("No se puede registrar este usuario porque el email o cédula ya están registrados.");
+            throw new RuntimeException("No se puede registrar este usuario porque el email o cédula ya están registrados.");
         }
         // si no hay error guardamos el usuario que nos pasaron a la base de datos y retornamos el usuario Guardado
         //{todo} esto de abajo se manejaba asi directo guardando la clave en texto plano
@@ -65,7 +65,7 @@ public class UsuarioService {
 
     }
 
-    public RespuestaAlLoguaarseDTO login(String email,String password) throws Exception{
+    public RespuestaAlLoguaarseDTO login(String email,String password) {
         //ponemos <usuario> para que sea un dato opcional de tipo usuario ya abajo te sirve para reconvertirlo
         // si no esta vacio sino
         //pierde el rastro de que era originalmente.
@@ -73,7 +73,7 @@ public class UsuarioService {
         Optional <Usuario> datosdelusuarioalqueintentaentrar = usuarioRepository.findByEmail(email);
         // reviso si el usuario siquiera existe  en la bdd con el correo que comprobamos
         if (!datosdelusuarioalqueintentaentrar.isPresent()){
-            throw new Exception("Ese correo no esta registrado");
+            throw new RuntimeException("Ese correo no esta registrado");
         }
         // si existe toca sacarlo de optional por que como si existe lo pongo en su clase original asi no da error
         Usuario eldatooptionalenmodousuario = datosdelusuarioalqueintentaentrar.get();
@@ -87,7 +87,7 @@ public class UsuarioService {
         //--------------------------------------------
         // codigo nuevo:
         if(!passwordEncoder.matches(password, eldatooptionalenmodousuario.getContrasena())){
-            throw new Exception("Lo siento, la contasena es incorrecta");
+            throw new RuntimeException("Lo siento, la contasena es incorrecta");
         }
         // return eldatooptionalenmodousuario; esto antes devolvia el usuario al front pero incluia la contrasena cifrada pero igual es una clave que no necesita andar aqui
         //si todo sale bien devuelve el dto limpio con los datos del usuario para el front

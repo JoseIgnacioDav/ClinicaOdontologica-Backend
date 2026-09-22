@@ -9,4 +9,6 @@ import java.util.List;
 @Repository
 public interface CitaRepository extends JpaRepository<Cita,Long> {
     List<Cita> findByOdontologoAndFecha(Usuario odontologo, LocalDate fecha); // estp le dice a la tabla Citas "Dame todas las citas donde el odontólogo sea X y la fecha sea Y"
+
+    List<Cita> findCitasByPaciente_Id(Long pacienteId);
 }

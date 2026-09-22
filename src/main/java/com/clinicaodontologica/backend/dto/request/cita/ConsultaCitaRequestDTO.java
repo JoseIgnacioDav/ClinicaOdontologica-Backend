@@ -1,4 +1,4 @@
-package com.clinicaodontologica.backend.dto.request;
+package com.clinicaodontologica.backend.dto.request.cita;
 
 import com.clinicaodontologica.backend.model.Usuario;
 

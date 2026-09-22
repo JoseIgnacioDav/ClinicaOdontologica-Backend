@@ -17,10 +17,16 @@ public class Cita {
     @Column(nullable = false)
     private LocalTime hora;
     @Column(nullable = false)
-    private String estado = "PENDIENTE";
+    private String estado = "PENDIENTE";   // pendiente -> todo // confirmada // completada // cancelada
+    @Column(nullable = false,updatable = false)
     private LocalTime horadecreaciondelacita;
-    @Column(nullable = false)
+    @Column(nullable = false, updatable = false)
     private LocalDate fechadecreaciondelacita;
+    @PrePersist
+    protected void onCreate() {
+        this.fechadecreaciondelacita = LocalDate.now();
+        this.horadecreaciondelacita = LocalTime.now();
+    }
 
     //  ESTOS CAMPOS SON LOS TEMPORALES PARA VALIDACIÓN: no se guardan ni el email ni la contrasena por que ya estan en  usuario y es mala practica solo los usas para validar los datos no necesitan guardarse en la bdd
     // no se les puede poner nullavle ni nada de restricciones de bdd
