@@ -6,7 +6,9 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 
 @Entity
-@Table(name = "citas")
+@Table(name = "citas", uniqueConstraints = { // con uniqueconstraints me evito las race codnitions y que se dupliquen citas en la msima fecha y hora
+        @UniqueConstraint(columnNames = {"odontologo_id","fecha","hora"})
+})
 public class Cita {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

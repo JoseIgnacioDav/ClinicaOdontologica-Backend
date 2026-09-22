@@ -58,6 +58,17 @@ public class CitaService {
             Usuario pacienteDelJson = pacienteOPTDelJson.get();
             citaqueintentancrear.setPaciente(pacienteDelJson);
         }
+
+        // valido para evitar la condicion de carrera:
+        boolean horarioOcupado = citaRepository.existsByOdontologoAndFechaAndHora(
+                citaqueintentancrear.getOdontologo(),
+                citaqueintentancrear.getFecha(),
+                citaqueintentancrear.getHora()
+        );
+        if(horarioOcupado){
+            throw new RuntimeException("Lo sentimos este horario ya ha sido reservado con el odontologo seleccionado");
+        }
+
         // obligo a toda cita a nacer como pendiente
             citaqueintentancrear.setEstado("PENDIENTE");
         // guardo la cita en la bdd
